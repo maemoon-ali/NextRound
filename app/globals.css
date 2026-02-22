@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: 34 197 94;
+  --accent-muted: 22 163 74;
+}
+
+body {
+  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Start page: clouds enter from one side and exit the other (no pop-in) */
+@keyframes cloud-drift-1 {
+  0% { transform: translateX(-100%) translateY(0); }
+  100% { transform: translateX(100vw) translateY(0); }
+}
+
+@keyframes cloud-drift-2 {
+  0% { transform: translateX(100vw) translateY(0); }
+  100% { transform: translateX(-100%) translateY(0); }
+}
+
+@keyframes cloud-drift-3 {
+  0% { transform: translateX(-100%) translateY(0); }
+  100% { transform: translateX(100vw) translateY(0); }
+}
+
+.cloud-move-1 {
+  animation: cloud-drift-1 45s linear infinite;
+}
+
+.cloud-move-2 {
+  animation: cloud-drift-2 55s linear infinite;
+}
+
+.cloud-move-3 {
+  animation: cloud-drift-3 50s linear infinite;
+}
+
+/* Start page: serious title + entrance */
+@keyframes title-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-title-in {
+  animation: title-in 0.8s ease-out forwards;
+}
+
+.landing-title {
+  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Brand name: space-themed font (Orbitron) */
+.font-brand {
+  font-family: var(--font-orbitron), "Orbitron", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Home: moving gradient background */
+@keyframes gradient-drift {
+  0%, 100% { background-position: 0% 0%, 100% 50%, 0% 100%; }
+  33% { background-position: 100% 0%, 50% 100%, 50% 0%; }
+  66% { background-position: 50% 100%, 0% 50%, 100% 50%; }
+}
+
+.animate-gradient-drift {
+  background-size: 200% 200%, 200% 200%, 200% 200%;
+  animation: gradient-drift 18s ease-in-out infinite;
+}
+
+/* Home: floating orbs with built-in pulse (one transform so they don't conflict) */
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
+  25% { transform: translate(6%, -8%) scale(1.12); opacity: 0.75; }
+  50% { transform: translate(-4%, 2%) scale(1.05); opacity: 0.65; }
+  75% { transform: translate(3%, 6%) scale(1.1); opacity: 0.7; }
+}
+
+@keyframes float-slower {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.45; }
+  33% { transform: translate(-8%, 5%) scale(1.15); opacity: 0.68; }
+  66% { transform: translate(5%, -6%) scale(1.06); opacity: 0.55; }
+}
+
+.animate-float-slow {
+  animation: float-slow 12s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: float-slower 14s ease-in-out infinite;
+}
+
+/* Home: title entrance */
+@keyframes landing-title-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-landing-title-in {
+  animation: landing-title-in 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Home: subtitle fade */
+@keyframes landing-fade-in {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-landing-fade-in {
+  animation: landing-fade-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
+  opacity: 0;
+}
+
+/* Home: CTA button entrance */
+@keyframes landing-cta-in {
+  0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-landing-cta-in {
+  animation: landing-cta-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+  opacity: 0;
+}
+
+/* Home: typewriter cursor */
+@keyframes typewriter-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.25; }
+}
+
+.animate-typewriter-cursor {
+  animation: typewriter-cursor 1s step-end infinite;
+}
+
+/* Home: quote cards — glass panel with subtle 3D rotation */
+@keyframes glass-rotate {
+  0%, 100% { transform: perspective(600px) rotateY(-3deg); }
+  50% { transform: perspective(600px) rotateY(3deg); }
+}
+
+.animate-glass-rotate {
+  animation: glass-rotate 8s ease-in-out infinite;
+}
+
+/* Home: waveform glow */
+.waveform-glow {
+  filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 20px currentColor);
+}
+
+/* Home: waveform gentle motion */
+@keyframes waveform-drift {
+  0%, 100% { opacity: 0.9; transform: scaleY(1) translateY(0); }
+  50% { opacity: 1; transform: scaleY(1.02) translateY(-1px); }
+}
+
+.animate-waveform-drift {
+  animation: waveform-drift 4s ease-in-out infinite;
+}
+
+/* Home: clean title (optional class if needed later) */
+.title-metallic {
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.35);
+}
+

@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "api"
+		},
+		{
+			"path": "home"
+		},
+		{
+			"path": "interview"
+		},
+		{
+			"path": "interview-technical"
+		},
+		{
+			"path": "prepare"
+		},
+		{
+			"path": "results"
+		},
+		{
+			"path": "role"
+		}
+	]
+}
