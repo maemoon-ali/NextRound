@@ -42,3 +42,6 @@ __pycache__/
 venv/
 env/
 ENV/
+
+# large data files
+live_data_persons_history_combined.json
