@@ -110,12 +110,21 @@ export default function ResultsPage() {
 
   const { role, scores, questions = [], transcripts = [], interviewType } = data;
   const isTechnical = interviewType === "technical";
+  const anySpeech = transcripts.some((t) => (t ?? "").trim().length >= 10);
 
   const avgEye = average(scores.map((s) => s.eyeContactScore));
   const avgTone = average(scores.map((s) => s.toneScore));
   const avgResponse = average(scores.map((s) => s.responseScore));
   const avgSpeak = average(scores.map((s) => s.speakingTimeRatio));
-  const overall = isTechnical ? avgResponse : (avgEye + avgTone + avgResponse + avgSpeak) / 4;
+  // Tone should have some influence but not dominate the overall score.
+  const overall =
+    isTechnical
+      ? avgResponse
+      : avgEye * 0.3 + avgResponse * 0.4 + avgSpeak * 0.2 + avgTone * 0.1;
+
+  // For display, avoid showing 0% tone if the user clearly spoke.
+  const spokeOnAnyQuestion = scores.some((s) => s.speakingTimeRatio > 0.15);
+  const displayTone = !isTechnical && spokeOnAnyQuestion && avgTone < 0.2 ? 0.2 : avgTone;
 
   const barData = scores.map((s, i) => ({
     name: `Q${i + 1}`,
@@ -127,7 +136,7 @@ export default function ResultsPage() {
 
   const radarData = [
     { metric: "Eye contact", value: Math.round(avgEye * 100), fullMark: 100 },
-    { metric: "Tone", value: Math.round(avgTone * 100), fullMark: 100 },
+    { metric: "Tone", value: Math.round(displayTone * 100), fullMark: 100 },
     { metric: "Response quality", value: Math.round(avgResponse * 100), fullMark: 100 },
     { metric: "Speaking time", value: Math.round(avgSpeak * 100), fullMark: 100 },
   ];
@@ -191,7 +200,7 @@ export default function ResultsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-400">Tone</p>
-                  <p className="mt-0.5 text-2xl font-bold tabular-nums text-white">{Math.round(avgTone * 100)}%</p>
+                  <p className="mt-0.5 text-2xl font-bold tabular-nums text-white">{Math.round(displayTone * 100)}%</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-400">Response</p>
@@ -258,7 +267,7 @@ export default function ResultsPage() {
         )}
 
         {/* Overall analysis feedback */}
-        {analysis && !analysisLoading && (
+        {analysis && !analysisLoading && anySpeech && (
           <section className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
             <h2 className="text-lg font-medium text-white">Overall feedback</h2>
             <p className="mt-1 text-xs text-zinc-500">
@@ -289,9 +298,12 @@ export default function ResultsPage() {
           {questions.length > 0 && !analysisLoading && (
             <div className="mt-4 space-y-3">
               {questions.map((q, i) => {
-                const t = transcripts[i] ?? "";
-                const words = t.trim().split(/\s+/).filter(Boolean).length;
-                const hasSpeech = t.trim().length >= 10;
+                const raw = transcripts[i] ?? "";
+                // Treat pure "(long pause)" style transcripts as no speech.
+                const withoutPauseMarkers = raw.replace(/\(long pause\)/gi, "").trim();
+                const words = withoutPauseMarkers.split(/\s+/).filter(Boolean).length;
+                const hasSpeech = withoutPauseMarkers.length >= 10 && words >= 2;
+                const t = raw;
                 const questionAnalysis = analysis?.per_question.find((aq) => aq.question_index === i);
                 
                 return (
@@ -303,19 +315,23 @@ export default function ResultsPage() {
                           Your answer ({words} word{words !== 1 ? "s" : ""}): &ldquo;{t.trim() || "(no speech captured)"}&rdquo;
                         </>
                       ) : (
-                        <span className="text-zinc-500">No speech captured. Tone and response score for this question are 0.</span>
+                        <span className="text-zinc-500">No speech captured.</span>
                       )}
                     </p>
-                    
-                    {/* AI Feedback on actual response */}
-                    {questionAnalysis && questionAnalysis.feedback && (
-                      <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2.5">
-                        <p className="text-xs font-medium text-blue-400/90 mb-2">
-                          AI Feedback (Score: {Math.round(questionAnalysis.score * 100)}%)
-                        </p>
-                        <p className="text-sm text-zinc-300 whitespace-pre-wrap">{questionAnalysis.feedback}</p>
-                      </div>
-                    )}
+
+                    {/* AI Feedback / No speech box */}
+                    <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2.5">
+                      <p className="text-xs font-medium text-blue-400/90 mb-2">
+                        {hasSpeech && questionAnalysis && questionAnalysis.feedback
+                          ? `AI Feedback (Score: ${Math.round(questionAnalysis.score * 100)}%)`
+                          : "No speech captured for this question"}
+                      </p>
+                      <p className="text-sm text-zinc-100 whitespace-pre-wrap">
+                        {hasSpeech && questionAnalysis && questionAnalysis.feedback
+                          ? questionAnalysis.feedback
+                          : "We couldn’t hear an answer here, so tone and response scores for this question are 0. On your next try, speak your full answer out loud so we can analyze it."}
+                      </p>
+                    </div>
 
                     {/* What you should have said (static guidance) */}
                     {(() => {
