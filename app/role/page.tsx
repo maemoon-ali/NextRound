@@ -364,7 +364,7 @@ function RoleContent() {
                 href={`/interview?company=${encodeURIComponent(company)}&role=${encodeURIComponent(role)}&function=${encodeURIComponent(function_)}`}
                 className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-emerald-500 px-5 py-4 text-sm font-semibold text-white hover:bg-emerald-400 transition-colors w-full text-center"
               >
-                Start Mock Interview
+                Mock Behavioral Interview
               </Link>
               <Link
                 href={`/interview-technical?company=${encodeURIComponent(company)}&role=${encodeURIComponent(role)}&function=${encodeURIComponent(function_)}`}

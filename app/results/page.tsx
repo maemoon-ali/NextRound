@@ -30,11 +30,26 @@ interface StoredResults {
   interviewType?: string;
 }
 
+interface AnalysisResult {
+  overall: string;
+  summary: string;
+  overall_score: number;
+  per_question: Array<{
+    question_index: number;
+    question: string;
+    transcript: string;
+    feedback: string;
+    score: number;
+  }>;
+}
+
 const METRIC_COLORS = ["#10b981", "#f59e0b", "#6366f1", "#ec4899"];
 
 export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<StoredResults | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(true);
 
   useEffect(() => {
     try {
@@ -56,6 +71,29 @@ export default function ResultsPage() {
           transcripts: parsed.transcripts ?? [],
           scores: parsed.scores,
         });
+      }
+
+      // Call analyze API to get feedback on responses
+      if (parsed.questions?.length && parsed.transcripts?.length) {
+        setAnalysisLoading(true);
+        fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            questions: parsed.questions,
+            transcripts: parsed.transcripts,
+          }),
+        })
+          .then((res) => res.json())
+          .then((result: AnalysisResult) => {
+            setAnalysis(result);
+            setAnalysisLoading(false);
+          })
+          .catch(() => {
+            setAnalysisLoading(false);
+          });
+      } else {
+        setAnalysisLoading(false);
       }
     } catch {
       router.replace("/");
@@ -219,20 +257,43 @@ export default function ResultsPage() {
           </section>
         )}
 
+        {/* Overall analysis feedback */}
+        {analysis && !analysisLoading && (
+          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
+            <h2 className="text-lg font-medium text-white">Overall feedback</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              AI-powered analysis of your interview performance including content quality and speech delivery.
+            </p>
+            <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
+              <p className="text-sm text-zinc-300 whitespace-pre-wrap">{analysis.summary}</p>
+              <p className="mt-3 text-xs text-zinc-400">
+                Overall score: {Math.round(analysis.overall_score * 100)}% ({analysis.overall === "good" ? "Good" : analysis.overall === "needs_work" ? "Needs work" : "Poor"})
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* Response analysis — from actual transcript only */}
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
           <h2 className="text-lg font-medium text-white">Response analysis</h2>
           <p className="mt-1 text-xs text-zinc-500">
             {isTechnical
-              ? "Your spoken explanation. Below, notes on where to add more in future technical answers."
-              : "Based on your actual transcript (what you said). Response score reflects length and structure of your answer."}
+              ? "Your spoken explanation with AI feedback. Below, notes on where to add more in future technical answers."
+              : "AI-powered feedback on your actual responses, including content quality, speech delivery (filler words, stuttering, pauses), and suggestions for improvement."}
           </p>
-          {questions.length > 0 && (
+          {analysisLoading && (
+            <div className="mt-4 text-center py-8 text-zinc-400">
+              Analyzing your responses...
+            </div>
+          )}
+          {questions.length > 0 && !analysisLoading && (
             <div className="mt-4 space-y-3">
               {questions.map((q, i) => {
                 const t = transcripts[i] ?? "";
                 const words = t.trim().split(/\s+/).filter(Boolean).length;
                 const hasSpeech = t.trim().length >= 10;
+                const questionAnalysis = analysis?.per_question.find((aq) => aq.question_index === i);
+                
                 return (
                   <div key={i} className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-3">
                     <p className="text-xs text-zinc-500">Q{i + 1}: {q}</p>
@@ -245,11 +306,24 @@ export default function ResultsPage() {
                         <span className="text-zinc-500">No speech captured. Tone and response score for this question are 0.</span>
                       )}
                     </p>
+                    
+                    {/* AI Feedback on actual response */}
+                    {questionAnalysis && questionAnalysis.feedback && (
+                      <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2.5">
+                        <p className="text-xs font-medium text-blue-400/90 mb-2">
+                          AI Feedback (Score: {Math.round(questionAnalysis.score * 100)}%)
+                        </p>
+                        <p className="text-sm text-zinc-300 whitespace-pre-wrap">{questionAnalysis.feedback}</p>
+                      </div>
+                    )}
+
+                    {/* What you should have said (static guidance) */}
                     {(() => {
-                      const analysis = getResponseAnalysisForQuestion(q, isTechnical);
-                      return analysis.length > 0 ? (
+                      const staticAnalysis = getResponseAnalysisForQuestion(q, isTechnical);
+                      return staticAnalysis.length > 0 ? (
                         <div className="mt-4 space-y-3">
-                          {analysis.map((sec, si) => (
+                          <p className="text-xs font-medium text-amber-400/90">What to include in future answers:</p>
+                          {staticAnalysis.map((sec, si) => (
                             <div key={si} className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
                               <p className="text-xs font-medium text-amber-400/90 mb-2">{sec.title}</p>
                               <ul className="space-y-1.5 text-sm text-zinc-300">
