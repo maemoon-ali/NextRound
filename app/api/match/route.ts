@@ -34,11 +34,17 @@ export async function POST(request: Request) {
   try {
     livePeople = loadLiveData();
   } catch (e) {
-    console.warn("[api/match] loadLiveData failed, using mock data:", e);
+    console.warn("[api/match] loadLiveData failed:", e);
+  }
+  if (!livePeople.length) {
+    return NextResponse.json(
+      { error: "Workforce dataset not loaded. Ensure live_data_persons_history_combined.json is present and valid." },
+      { status: 503 }
+    );
   }
 
   try {
-    const results = findSimilarPeople(entriesToUse, 12, livePeople.length > 0 ? livePeople : undefined);
+    const results = findSimilarPeople(entriesToUse, 12, livePeople);
     return NextResponse.json({ matches: results });
   } catch (e) {
     console.error("[api/match]", e);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { loadLiveData } from "@/lib/live-data-loader";
 
 /** Try primary URL (e.g. Clearbit); on failure try Google favicon for that domain. */
 async function fetchLogo(url: string): Promise<{ body: ArrayBuffer; contentType: string } | null> {
@@ -51,13 +52,14 @@ export async function GET(request: NextRequest) {
   let targetUrl = url;
 
   if (!targetUrl && company) {
-    const { COMPANY_LOGOS } = await import("@/lib/mock-livedata");
     const name = company.trim();
-    targetUrl = name ? COMPANY_LOGOS[name] ?? null : null;
-    if (!targetUrl && name) {
-      const domain = name.toLowerCase().replace(/\s+/g, "") + ".com";
-      targetUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-    }
+    const dataset = loadLiveData();
+    const domainFromData =
+      dataset.find((p) => p.current_position?.company?.name?.trim().toLowerCase() === name.toLowerCase())?.current_position.company.domain ??
+      dataset.find((p) => p.job_history?.some((j) => j.company?.name?.trim().toLowerCase() === name.toLowerCase() && j.company.domain))?.job_history.find((j) => j.company?.name?.trim().toLowerCase() === name.toLowerCase() && j.company.domain)?.company.domain ??
+      null;
+    const domain = domainFromData ?? (name ? name.toLowerCase().replace(/\s+/g, "") + ".com" : null);
+    targetUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null;
   }
 
   if (!targetUrl || !targetUrl.startsWith("http")) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPeopleWhoWorkedAtCompany, formatShortJobHistory } from "@/lib/people-at-company";
+import { loadLiveData } from "@/lib/live-data-loader";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,7 +13,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing company" }, { status: 400 });
   }
 
-  const people = getPeopleWhoWorkedAtCompany(company, {
+  const dataset = loadLiveData();
+  if (!dataset.length) {
+    return NextResponse.json(
+      { error: "Workforce dataset not loaded. Ensure live_data_persons_history_combined.json is present and valid." },
+      { status: 503 }
+    );
+  }
+
+  const people = getPeopleWhoWorkedAtCompany(company, dataset, {
     function: function_ || undefined,
     level: level || undefined,
     limit,
@@ -21,7 +30,7 @@ export async function GET(request: Request) {
   const payload = people.map((p) => ({
     id: p.id,
     display_name: p.display_name ?? "Professional",
-    job_history_summary: formatShortJobHistory(p),
+    job_history_summary: formatShortJobHistory(p, 4),
     linkedin_url: p.linkedin_url ?? "https://www.linkedin.com",
   }));
 

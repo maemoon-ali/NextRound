@@ -1,5 +1,4 @@
 import type { UserJobEntry, LiveDataPerson, JobFunction, JobLevel } from "./livedata-types";
-import { MOCK_PEOPLE } from "./mock-livedata";
 
 const LEVEL_ORDER: JobLevel[] = ["intern", "entry", "senior", "manager", "director", "vp", "c_suite"];
 
@@ -199,12 +198,13 @@ export function getMatchReasons(userJobs: UserJobEntry[], person: LiveDataPerson
 export function findSimilarPeople(
   userJobs: UserJobEntry[],
   topK = 5,
-  people?: LiveDataPerson[]
+  people: LiveDataPerson[]
 ): MatchResult[] {
   if (!Array.isArray(userJobs) || userJobs.length === 0) return [];
   const safe = userJobs.filter((j) => j && (String(j.company_name ?? "").trim() || String(j.title ?? "").trim()));
   if (safe.length === 0) return [];
-  const pool = people && people.length > 0 ? people : MOCK_PEOPLE;
+  const pool = Array.isArray(people) ? people : [];
+  if (pool.length === 0) return [];
   try {
     const withScores = pool
       .map((person) => ({

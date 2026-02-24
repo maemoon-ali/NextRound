@@ -3,7 +3,6 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense, useState, useEffect } from "react";
-import { COMPANY_CAREERS } from "@/lib/mock-livedata";
 
 type PersonAtCompany = {
   id: string;
@@ -11,8 +10,22 @@ type PersonAtCompany = {
   job_history_summary: string;
   linkedin_url: string;
 };
-import { COMPANY_INFO, getDifficulty } from "@/lib/company-info";
 import { saveBookmark, removeBookmark, isBookmarked } from "@/lib/bookmarks";
+
+type CompanyMeta = {
+  company: string;
+  domain: string | null;
+  industry: string | null;
+  employee_count: number | null;
+  countries: string[];
+  profiles_in_dataset: number;
+  roles_at_company: number;
+  roles_matching_filters: number;
+  top_titles: { title: string; count: number }[];
+  top_titles_matching_filters: { title: string; count: number }[];
+  careers_url: string | null;
+  difficulty: { level: string; note: string };
+};
 
 /** Return a longer explanation for a short match reason. */
 function expandMatchReason(reason: string): string {
@@ -81,6 +94,8 @@ function RoleContent() {
   const [bookmarked, setBookmarked] = useState(false);
   const [peopleAtCompany, setPeopleAtCompany] = useState<PersonAtCompany[]>([]);
   const [peopleLoading, setPeopleLoading] = useState(true);
+  const [companyMeta, setCompanyMeta] = useState<CompanyMeta | null>(null);
+  const [companyMetaLoading, setCompanyMetaLoading] = useState(true);
 
   useEffect(() => {
     setBookmarked(isBookmarked(company, role));
@@ -102,12 +117,32 @@ function RoleContent() {
       .finally(() => setPeopleLoading(false));
   }, [company, function_, level]);
 
-  const applyUrl = company
-    ? COMPANY_CAREERS[company] ?? `https://www.${company.toLowerCase().replace(/\s+/g, "")}.com/careers`
-    : "#";
+  useEffect(() => {
+    if (!company) {
+      setCompanyMeta(null);
+      setCompanyMetaLoading(false);
+      return;
+    }
+    setCompanyMetaLoading(true);
+    const params = new URLSearchParams({ company });
+    if (function_) params.set("function", function_);
+    if (level) params.set("level", level);
+    fetch(`/api/company-meta?${params}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCompanyMeta(data))
+      .catch(() => setCompanyMeta(null))
+      .finally(() => setCompanyMetaLoading(false));
+  }, [company, function_, level]);
 
-  const companyInfo = company ? COMPANY_INFO[company] : null;
-  const difficulty = getDifficulty(company, level);
+  function inferCareersUrlFromName(name: string | null | undefined): string | null {
+    const n = (name ?? "").trim();
+    if (!n) return null;
+    const domain = n.toLowerCase().replace(/\s+/g, "") + ".com";
+    return `https://www.${domain}/careers`;
+  }
+
+  const applyUrl = companyMeta?.careers_url ?? inferCareersUrlFromName(company) ?? "#";
+  const difficulty = companyMeta?.difficulty ?? { level: "Moderate", note: "Derived from your dataset." };
 
   function handleBookmark() {
     if (bookmarked) {
@@ -205,18 +240,67 @@ function RoleContent() {
               </div>
 
               <div className="px-8 py-8 space-y-10">
-                {companyInfo && (
+                {!companyMetaLoading && companyMeta && (
                   <section className="space-y-3">
                     <h3 className="text-xs font-semibold uppercase tracking-widest text-emerald-400/90">
                       About the Company
                     </h3>
                     <div className="rounded-xl bg-zinc-800/50 border border-zinc-700/60 px-5 py-4">
-                      <p className="text-sm leading-relaxed text-zinc-300">{companyInfo.description}</p>
+                      <p className="text-sm leading-relaxed text-zinc-300">
+                        Based on your uploaded workforce dataset, <span className="font-medium text-zinc-100">{companyMeta.company}</span>
+                        {companyMeta.domain ? <> (<span className="text-zinc-200">{companyMeta.domain}</span>)</> : null} appears across{" "}
+                        <span className="font-medium text-zinc-100">{companyMeta.profiles_in_dataset.toLocaleString()}</span> profiles and{" "}
+                        <span className="font-medium text-zinc-100">{companyMeta.roles_at_company.toLocaleString()}</span> role entries.
+                        For the selected role <span className="font-medium text-zinc-100">{role}</span>
+                        {function_ ? <> in <span className="font-medium text-zinc-100">{toTitleCase(function_)}</span></> : null}
+                        {level ? <> at <span className="font-medium text-zinc-100">{toTitleCase(level)}</span> level</> : null},{" "}
+                        the dataset contains{" "}
+                        <span className="font-medium text-zinc-100">{companyMeta.roles_matching_filters.toLocaleString()}</span> matching role entries.
+                      </p>
+                      <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+                        {companyMeta.industry
+                          ? <>In the dataset, this company is categorized under <span className="font-medium text-zinc-200">{companyMeta.industry}</span>.</>
+                          : <>In the dataset, this company’s industry is not populated.</>}
+                        {" "}
+                        Below are the most common titles observed for this company, which gives a concrete picture of what teams/roles exist there in your data.
+                      </p>
                       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-                        <span>{companyInfo.industry}</span>
-                        <span className="text-zinc-600">•</span>
-                        <span>{companyInfo.employeeCount} Employees</span>
+                        {companyMeta.industry && <span>{companyMeta.industry}</span>}
+                        {companyMeta.industry && (companyMeta.employee_count != null || companyMeta.countries.length) && <span className="text-zinc-600">•</span>}
+                        {companyMeta.employee_count != null && <span>{companyMeta.employee_count.toLocaleString()} Employees</span>}
+                        {companyMeta.employee_count != null && companyMeta.countries.length > 0 && <span className="text-zinc-600">•</span>}
+                        {companyMeta.countries.length > 0 && <span>Countries: {companyMeta.countries.join(", ")}</span>}
                       </div>
+                      {(companyMeta.top_titles_matching_filters?.length ?? 0) > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-medium text-zinc-400">Common titles (matching selected filters)</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {companyMeta.top_titles_matching_filters.slice(0, 6).map((x) => (
+                              <span
+                                key={x.title}
+                                className="rounded-full border border-zinc-600 bg-zinc-900/40 px-3 py-1 text-xs text-zinc-300"
+                              >
+                                {x.title} <span className="text-zinc-500">({x.count})</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(companyMeta.top_titles?.length ?? 0) > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-medium text-zinc-400">Most common titles at this company (overall)</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {companyMeta.top_titles.slice(0, 6).map((x) => (
+                              <span
+                                key={x.title}
+                                className="rounded-full border border-zinc-700 bg-zinc-800/40 px-3 py-1 text-xs text-zinc-400"
+                              >
+                                {x.title} <span className="text-zinc-600">({x.count})</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </section>
                 )}
@@ -236,6 +320,29 @@ function RoleContent() {
                     <p className="text-sm leading-relaxed text-zinc-400">
                       <span className="font-medium text-zinc-300">Function:</span> {toTitleCase(function_)} — common responsibilities include collaboration with cross-functional partners, clear communication, and impact on product or engineering outcomes.
                     </p>
+                    {matchReasons.length > 0 && (
+                      <p className="text-sm leading-relaxed text-zinc-400">
+                        <span className="font-medium text-zinc-300">Why this role fits you:</span>{" "}
+                        {matchReasons.join("; ")}.
+                      </p>
+                    )}
+                    {!companyMetaLoading && companyMeta && (companyMeta.top_titles_matching_filters?.length ?? 0) > 0 && (
+                      <div className="pt-2 border-t border-zinc-700/60 mt-2">
+                        <p className="text-xs font-medium text-zinc-400">
+                          Common titles for this level &amp; function at {companyMeta.company} (from your dataset)
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {companyMeta.top_titles_matching_filters.slice(0, 6).map((x) => (
+                            <span
+                              key={x.title}
+                              className="rounded-full border border-zinc-600 bg-zinc-900/40 px-3 py-1 text-xs text-zinc-300"
+                            >
+                              {x.title} <span className="text-zinc-500">({x.count})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </section>
 
