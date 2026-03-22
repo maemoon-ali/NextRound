@@ -22,9 +22,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# local env files — NEVER commit, contain API keys
 .env*.local
 .env
+.env.production
+.env.staging
+
+# Claude Code session files (contain conversation history)
+.claude/
+
+# Ollama logs
+ollama*.log
 
 # vercel
 .vercel

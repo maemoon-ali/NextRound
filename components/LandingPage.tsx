@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export function LandingPage() {
   const router = useRouter();
   const [animating, setAnimating] = useState(false);
   const [exiting, setExiting] = useState(false);
+
+  // Always render in dark mode — useLayoutEffect fires before paint, preventing any flash
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const wasDark = html.classList.contains("dark");
+    html.classList.add("dark");
+    html.classList.remove("light");
+    return () => {
+      // Restore the user's saved preference when navigating away
+      const saved = typeof localStorage !== "undefined" ? localStorage.getItem("nr-theme") : null;
+      if (saved === "light") {
+        html.classList.add("light");
+        html.classList.remove("dark");
+      } else if (!wasDark) {
+        html.classList.remove("dark");
+      }
+    };
+  }, []);
 
   function handleStart() {
     if (animating || exiting) return;

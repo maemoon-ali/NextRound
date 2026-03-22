@@ -2,13 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* Prevent white flash during page navigation — always start dark */
+html, body {
+  background-color: #0a0c0f;
+}
+
+/* Page fade-in — applied to the prepare page root so it always fades in elegantly */
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-fade-in {
+  animation: page-fade-in 0.45s ease both;
+}
+
+:root, .dark {
+  --slider-track-empty: rgba(255, 255, 255, 0.14);
+  --salary-dim: rgba(255, 255, 255, 0.28);
+  --salary-muted: rgba(255, 255, 255, 0.38);
+  --salary-toggle-bg: rgba(255, 255, 255, 0.10);
+  --salary-zero: rgba(255, 255, 255, 0.32);
   --accent: 34 197 94;
   --accent-muted: 22 163 74;
+  --pg-bg: linear-gradient(135deg, #020d1a 0%, #060f28 35%, #031a10 70%, #060e20 100%);
+  --pg-glass: rgba(255, 255, 255, 0.07);
+  --pg-glass-hover: rgba(255, 255, 255, 0.12);
+  --pg-glass-border: rgba(255, 255, 255, 0.16);
+  --pg-glass-shadow: 0 8px 40px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.22);
+  --pg-sidebar: #000000;
+  --pg-sidebar-border: rgba(255, 255, 255, 0.10);
+  --pg-text: #ffffff;
+  --pg-text-muted: rgba(255, 255, 255, 0.55);
+  --pg-text-sub: rgba(255, 255, 255, 0.35);
+  --pg-specular: rgba(255, 255, 255, 0.45);
+}
+
+.light {
+  --slider-track-empty: rgba(0, 0, 0, 0.14);
+  --salary-dim: rgba(0, 0, 0, 0.50);
+  --salary-muted: rgba(0, 0, 0, 0.55);
+  --salary-toggle-bg: rgba(0, 0, 0, 0.10);
+  --salary-zero: rgba(0, 0, 0, 0.45);
+  --accent: 5 150 105;
+  --accent-muted: 4 120 87;
+  /* Clean white background — no colored gradient */
+  --pg-bg: #f8fafc;
+  /* Fully opaque white cards so no gradient bleeds through */
+  --pg-glass: rgba(255, 255, 255, 1);
+  --pg-glass-hover: rgba(248, 250, 252, 1);
+  --pg-glass-border: rgba(0, 0, 0, 0.10);
+  --pg-glass-shadow: 0 2px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1);
+  --pg-sidebar: #ffffff;
+  --pg-sidebar-border: rgba(0, 0, 0, 0.08);
+  /* Dark, high-contrast text */
+  --pg-text: #0f172a;
+  --pg-text-muted: #475569;
+  --pg-text-sub: #64748b;
+  --pg-specular: rgba(255, 255, 255, 1);
+}
+
+/* Smooth theme transition — layout containers get a slow background fade (0.4s ease) */
+body,
+header,
+main,
+section,
+footer,
+.frosted-glass-card,
+[class*="rounded-2xl"],
+[class*="glassPanel"],
+[data-role-card] {
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.3s ease,
+    box-shadow 0.4s ease;
+}
+/* aside gets same slow fade, but clip-path is handled by inline style */
+aside {
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+/* Nav icon rail — only the button background (hover) gets a transition.
+   Label spans retain their own inline opacity/transform transitions. */
+[data-nav-rail] button {
+  transition: background-color 0.15s ease !important;
+}
+/* The icon shell (rounded circle around each icon) must ONLY transition
+   background-color — never color — so the icon never fades through a
+   low-contrast midpoint during a theme switch. */
+[data-nav-rail] .nav-icon-shell,
+[data-nav-rail] .nav-icon-shell svg {
+  transition: background-color 0.3s ease !important;
+}
+
+/* Hide dark-mode-only ambient glow orbs in light mode */
+.light .animate-gradient-drift,
+.light .animate-float-slow,
+.light .animate-float-slower {
+  opacity: 0 !important;
 }
 
 body {
-  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
 }
 
 @layer utilities {
@@ -62,14 +156,15 @@ body {
 }
 
 .landing-title {
-  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  font-family: var(--font-orbitron), system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
 
-/* Brand name: space-themed font (Orbitron) */
+/* Brand name */
 .font-brand {
-  font-family: var(--font-orbitron), "Orbitron", sans-serif;
-  letter-spacing: 0.02em;
+  font-family: var(--font-orbitron), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  font-weight: 700;
 }
 
 /* Home: moving gradient background */
@@ -185,5 +280,386 @@ body {
 .title-metallic {
   color: #fff;
   text-shadow: 0 2px 24px rgba(0,0,0,0.35);
+}
+
+/* Shimmering brand text */
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    105deg,
+    rgba(255,255,255,0.30) 0%,
+    rgba(255,255,255,0.30) 35%,
+    rgba(255,255,255,0.95) 48%,
+    rgba(52,211,153,0.90)  52%,
+    rgba(255,255,255,0.30) 65%,
+    rgba(255,255,255,0.30) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-sweep 7s linear infinite;
+  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Frosted glass card — 3D tilt & glare */
+.frosted-glass-card {
+  position: relative;
+  transition: transform 0.15s cubic-bezier(0.25, 1.1, 0.4, 1),
+              box-shadow 0.2s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.frosted-glass-card:hover {
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.45),
+    0 8px 16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+}
+
+.frosted-glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle 180px at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.10) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.frosted-glass-card:hover::after {
+  opacity: 1;
+}
+
+/* ─── Custom dark scrollbar ─────────────────────────────────────────────── */
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+}
+
+/* ─── Custom number input — hide native spin buttons ────────────────────── */
+input[type="number"].nr-number-input::-webkit-inner-spin-button,
+input[type="number"].nr-number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"].nr-number-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ─── Salary slider ──────────────────────────────────────────────────────── */
+.salary-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.salary-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(52, 211, 153);
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.55);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.salary-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 14px rgba(52, 211, 153, 0.9);
+  transform: scale(1.15);
+}
+.salary-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(52, 211, 153);
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.55);
+}
+.light .salary-slider::-webkit-slider-thumb {
+  background: #059669;
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 8px rgba(5, 150, 105, 0.55);
+}
+.light .salary-slider::-moz-range-thumb {
+  background: #059669;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* ─── Light-mode: override hardcoded dark Tailwind colours ─────────────────
+   All pages use zinc-* and text-white for dark mode. These rules remap them
+   to legible light-mode equivalents when the <html> tag has class="light".   */
+
+/* Page / panel backgrounds */
+.light .bg-zinc-950                       { background-color: #f8fafc !important; }
+.light [class*="bg-zinc-900"]             { background-color: rgba(241,245,249,0.85) !important; }
+.light [class*="bg-zinc-800"]             { background-color: rgba(226,232,240,0.70) !important; }
+.light [class*="bg-zinc-700"]             { background-color: rgba(203,213,225,0.50) !important; }
+
+/* Hover backgrounds */
+.light [class*="hover:bg-zinc-8"]:hover   { background-color: rgba(203,213,225,0.80) !important; }
+.light [class*="hover:bg-zinc-7"]:hover   { background-color: rgba(203,213,225,0.60) !important; }
+.light [class*="hover:bg-white"]:hover    { background-color: rgba(0,0,0,0.06) !important; }
+
+/* Gradient stops (role page header) */
+.light [class*="from-zinc-9"] {
+  --tw-gradient-from: #e2e8f0 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(226,232,240,0)) !important;
+}
+.light [class*="to-emerald-950"] {
+  --tw-gradient-to: rgba(209,250,229,0.25) !important;
+}
+
+/* Text colours: remap white/zinc to dark slate — all must be readable on white */
+.light .text-white,
+.light [class*="text-white/"]             { color: #0f172a !important; }
+.light .text-zinc-100                     { color: #1e293b !important; }
+.light .text-zinc-200                     { color: #334155 !important; }
+.light .text-zinc-300,
+.light [class*="text-zinc-300/"]          { color: #475569 !important; }
+.light .text-zinc-400,
+.light [class*="text-zinc-400/"]          { color: #475569 !important; }
+.light .text-zinc-500,
+.light [class*="text-zinc-500/"]          { color: #475569 !important; }
+.light .text-zinc-600,
+.light [class*="text-zinc-600/"]          { color: #374151 !important; }
+
+/* Borders */
+.light [class*="border-zinc-8"],
+.light [class*="border-zinc-7"],
+.light [class*="border-zinc-6"]           { border-color: rgba(0,0,0,0.12) !important; }
+.light [class*="border-white"]            { border-color: rgba(0,0,0,0.10) !important; }
+
+/* Input / select / textarea fields */
+.light input:not([type="range"]),
+.light select,
+.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(0,0,0,0.18) !important;
+}
+
+/* Role card backgrounds in light mode */
+.light [class*="bg-zinc-950"]             { background-color: #f1f5f9 !important; }
+.light [class*="bg-zinc-900"]             { background-color: #f8fafc !important; }
+.light [class*="bg-zinc-800"]             { background-color: #f1f5f9 !important; }
+.light [class*="bg-white/"]              { background-color: rgba(255,255,255,0.95) !important; }
+.light input::placeholder,
+.light textarea::placeholder { color: #94a3b8 !important; }
+
+/* Emerald colours: remap to darker green for legibility on light backgrounds */
+.light .text-emerald-400,
+.light [class*="text-emerald-400/"] { color: #059669 !important; }
+.light .text-emerald-300,
+.light [class*="text-emerald-300/"] { color: #047857 !important; }
+.light .text-emerald-200             { color: #065f46 !important; }
+.light [class*="text-emerald-4"]     { color: #059669 !important; }
+.light [class*="bg-emerald-5"]       { background-color: rgba(5,150,105,0.18) !important; }
+.light [class*="border-emerald-5"]   { border-color: rgba(5,150,105,0.35) !important; }
+.light .text-amber-300,
+.light [class*="text-amber-3"]       { color: #b45309 !important; }
+.light .text-amber-400               { color: #92400e !important; }
+.light [class*="bg-amber-5"]         { background-color: rgba(245,158,11,0.15) !important; }
+.light [class*="border-amber-4"]     { border-color: rgba(180,83,9,0.35) !important; }
+
+/* Role card in light mode: strip the dark gradient, use plain white */
+.light [data-role-card="vibrant"] {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(5, 150, 105, 0.25) !important;
+}
+
+/* Location dropdown — bubble expand in */
+@keyframes location-dropdown-in {
+  0%   { opacity: 0; max-height: 0px;   transform: scaleY(0.88) translateY(-6px); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; max-height: 200px; transform: scaleY(1)    translateY(0);    }
+}
+.location-dropdown {
+  transform-origin: top center;
+  animation: location-dropdown-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  overflow: hidden;
+}
+
+/* Nav icon pulse — dark mode: slow green glow breath, no colour change */
+@keyframes nav-icon-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px rgba(52,211,153,0.5));
+    opacity: 0.85;
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(52,211,153,0.9));
+    opacity: 1;
+  }
+}
+/* Nav icon pulse — light mode */
+@keyframes nav-icon-pulse-light {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(5,150,105,0.4));
+    opacity: 0.85;
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(5,150,105,0.8));
+    opacity: 1;
+  }
+}
+
+.nav-icon-active {
+  animation: nav-icon-pulse 4s ease-in-out infinite;
+  transform: scale(1.18);
+  transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+}
+.light .nav-icon-active {
+  animation: nav-icon-pulse-light 4s ease-in-out infinite;
+}
+
+/* ── Education section — light-mode overrides ───────────────────────────────── */
+.light .nr-edu-section .nr-edu-heading {
+  color: #1e40af !important; /* blue-800 */
+  font-weight: 700;
+}
+.light .nr-edu-section .nr-edu-subtext {
+  color: #3b82f6 !important; /* blue-500 */
+  font-weight: 600;
+}
+.light .nr-edu-section .nr-edu-label {
+  color: #1d4ed8 !important; /* blue-700 */
+  font-weight: 700;
+}
+.light .nr-edu-section .nr-edu-hint {
+  color: #3b82f6 !important;
+  font-weight: 500;
+}
+.light .nr-edu-section .nr-edu-util {
+  color: #374151 !important; /* gray-700 */
+  font-weight: 600;
+}
+.light .nr-edu-section .nr-edu-util:hover {
+  color: #111827 !important;
+}
+/* Inactive degree-type pill */
+.light .nr-edu-section .nr-deg-inactive {
+  color: #374151 !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.18) !important;
+  font-weight: 600;
+}
+.light .nr-edu-section .nr-deg-inactive:hover {
+  color: #111827 !important;
+  background: rgba(0, 0, 0, 0.09) !important;
+}
+/* Active degree-type pill */
+.light .nr-edu-section .nr-deg-active {
+  color: #1d4ed8 !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+/* Edu inputs */
+.light .nr-edu-input {
+  background: #ffffff !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #111827 !important;
+}
+.light .nr-edu-input::placeholder {
+  color: #9ca3af !important;
+}
+.light .nr-edu-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* ── Roles-matching stat card ───────────────────────────────────────────────── */
+.nr-roles-matching {
+  background: rgba(6, 78, 59, 0.22);
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  border-radius: 0.75rem;
+}
+.nr-roles-matching .nr-roles-value {
+  color: rgb(110, 231, 183); /* emerald-300 */
+}
+.light .nr-roles-matching {
+  background: rgba(236, 253, 245, 0.95);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+}
+.light .nr-roles-matching .nr-roles-value {
+  color: rgb(5, 150, 105); /* emerald-600 */
+}
+
+/* ── Hold-to-save card animations ──────────────────────────────────────────── */
+@keyframes nr-bounce-in {
+  0%   { transform: scale(0.3); opacity: 0; }
+  55%  { transform: scale(1.18); opacity: 1; }
+  80%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+@keyframes nr-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes nr-badge-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.5); }
+  70%  { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+/* shimmer-text: switch to dark gradient so it's visible on light backgrounds */
+.light .shimmer-text {
+  background: linear-gradient(
+    105deg,
+    rgba(15,23,42,0.65) 0%,
+    rgba(15,23,42,0.65) 35%,
+    rgba(5,150,105,1.00) 48%,
+    rgba(4,120,87,1.00)  52%,
+    rgba(15,23,42,0.65) 65%,
+    rgba(15,23,42,0.65) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 

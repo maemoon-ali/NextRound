@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { WaveformLogo } from "@/components/WaveformLogo";
+import { CompanyLogo as CompanyLogoShared } from "@/components/ui/company-logo";
 
 const ROTATING_PHRASES = [
   "Practice behavioral questions with confidence.",
@@ -161,34 +162,9 @@ const CAROUSEL_SPACING = 200;
 const SLIDE_DURATION_MS = 400;
 const AUTO_SCROLL_MS = 4500;
 
-/** Company logo via /api/logo. No background. */
+/** Company logo — thin wrapper so the page doesn't need to change call sites */
 function CompanyLogo({ name }: { name: string }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const initial = (name || "?").trim().slice(0, 2).toUpperCase() || "?";
-  const hue = (name || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
-  const logoSrc = name?.trim() ? `/api/logo?company=${encodeURIComponent(name.trim())}` : "";
-  if (logoSrc && !imgFailed) {
-    return (
-      <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={logoSrc}
-          alt=""
-          className="h-full w-full object-contain"
-          onError={() => setImgFailed(true)}
-        />
-      </div>
-    );
-  }
-  return (
-    <div
-      className="flex-shrink-0 w-12 h-12 flex items-center justify-center text-sm font-bold"
-      style={{ color: `hsl(${hue}, 55%, 55%)` }}
-      aria-hidden
-    >
-      {initial}
-    </div>
-  );
+  return <CompanyLogoShared name={name} size="h-12 w-12" />;
 }
 
 function QuoteCard({
@@ -360,21 +336,27 @@ export default function HomePage() {
   const [animating, setAnimating] = useState(false);
   const [exiting, setExiting] = useState(false);
 
+  // Dark mode is enforced by ThemeProvider (which checks the pathname).
+  // No local override needed here.
+
   function handleStart() {
     if (animating || exiting) return;
     setAnimating(true);
     setTimeout(() => {
       setAnimating(false);
       setExiting(true);
-    }, 350);
-    setTimeout(() => router.push("/prepare"), 700);
+    }, 200);
+    // Navigate after the fade-out fully completes (500ms transition)
+    setTimeout(() => router.push("/prepare"), 650);
   }
 
   return (
     <div
-      className={`relative h-screen flex flex-col items-center justify-center overflow-hidden transition-opacity duration-500 ${
-        exiting ? "opacity-0" : ""
-      }`}
+      className="relative h-screen flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        opacity: exiting ? 0 : 1,
+        transition: exiting ? "opacity 0.5s ease" : "none",
+      }}
     >
       {/* Green & blue moving background */}
       <div className="absolute inset-0 bg-[#0a0c0f]" />
@@ -406,37 +388,48 @@ export default function HomePage() {
         <div className="absolute top-1/2 right-1/3 w-72 h-72 rounded-full bg-blue-500/18 blur-[90px] animate-float-slow" style={{ animationDelay: "1.5s" }} />
       </div>
 
-      {/* Subtle corner accent (logo-style mark) */}
-      <div className="absolute bottom-8 right-8 w-3 h-3 rotate-45 border border-emerald-400/40 rounded-sm pointer-events-none z-10 animate-landing-fade-in" aria-hidden />
 
       <div className="relative z-10 flex flex-col items-center justify-center px-4 text-center flex-1 min-h-0 py-2 sm:py-4 w-full max-w-4xl mx-auto">
+
+        {/* Version badge — absolutely pinned to top, doesn't affect centering */}
+        <div className="absolute top-9 left-1/2 -translate-x-1/2">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 backdrop-blur-md"
+            style={{ background: "rgba(255,255,255,0.07)" }}>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[11px] font-medium tracking-wide text-white/70">
+              Version 2.0 · Try <span className="text-emerald-300 font-semibold">Nexa</span> <span className="text-white/40">(Beta)</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Main content — centered as a group with the panels below */}
         <div className="mt-[35px]">
           <WaveformLogo variant="hero" />
-        <h1 className="landing-title mt-5 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-center animate-landing-title-in text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
-          <span className="font-brand">NextRound</span>
-        </h1>
-        <p className="mt-5 text-xs sm:text-sm uppercase tracking-[0.2em] text-emerald-200/70 font-medium animate-landing-fade-in">
-          Your interview practice coach
-        </p>
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={animating || exiting}
-          className={`
-            mt-5 rounded-2xl px-10 sm:px-14 py-3 sm:py-4 text-lg sm:text-xl font-semibold text-white
-            bg-gradient-to-r from-emerald-500 to-blue-500
-            shadow-[0_0_40px_rgba(16,185,129,0.3)]
-            hover:shadow-[0_0_50px_rgba(16,185,129,0.4)]
-            hover:from-emerald-400 hover:to-blue-400
-            focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-[#0a0c0f]
-            disabled:opacity-90
-            transition-all duration-300 ease-out
-            animate-landing-cta-in
-            ${animating ? "scale-[0.97] shadow-[0_0_25px_rgba(16,185,129,0.35)]" : ""}
-          `}
-        >
-          {exiting ? "Starting…" : "Get started"}
-        </button>
+          <h1 className="landing-title mt-5 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-center animate-landing-title-in text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
+            <span className="font-brand">NextRound</span>
+          </h1>
+          <p className="mt-5 text-xs sm:text-sm uppercase tracking-[0.2em] text-emerald-200/70 font-medium animate-landing-fade-in">
+            Your interview practice coach
+          </p>
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={animating || exiting}
+            className={`
+              mt-5 rounded-2xl px-10 sm:px-14 py-3 sm:py-4 text-lg sm:text-xl font-semibold text-white
+              bg-gradient-to-r from-emerald-500 to-blue-500
+              shadow-[0_0_40px_rgba(16,185,129,0.3)]
+              hover:shadow-[0_0_50px_rgba(16,185,129,0.4)]
+              hover:from-emerald-400 hover:to-blue-400
+              focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-[#0a0c0f]
+              disabled:opacity-90
+              transition-all duration-300 ease-out
+              animate-landing-cta-in
+              ${animating ? "scale-[0.97] shadow-[0_0_25px_rgba(16,185,129,0.35)]" : ""}
+            `}
+          >
+            {exiting ? "Starting…" : "Get Started"}
+          </button>
         </div>
 
         <LinkedInGallery />

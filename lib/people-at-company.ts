@@ -17,14 +17,15 @@ function workedAtCompany(person: LiveDataPerson, companyName: string): boolean {
   return person.job_history.some(at) || at(person.current_position);
 }
 
-/** Short job history string: "Intern at Stripe → Engineer at Vercel" */
+/** Short job history string: "Intern at Stripe → Engineer at Vercel" (chronological, oldest first) */
 export function formatShortJobHistory(person: LiveDataPerson, maxJobs = 4): string {
   const all = [...(person.job_history ?? []), person.current_position].filter(Boolean);
-  // Prefer most recent roles (by started_at); always include current_position.
+  // Sort ascending (oldest first) so the arrow reads as a career progression timeline
   const sorted = all
     .slice()
-    .sort((a, b) => (String(b.started_at ?? "")).localeCompare(String(a.started_at ?? "")));
-  const picked = sorted.slice(0, Math.max(1, Math.min(8, maxJobs)));
+    .sort((a, b) => (String(a.started_at ?? "")).localeCompare(String(b.started_at ?? "")));
+  // Take the last maxJobs entries so we always end at the current position
+  const picked = sorted.slice(Math.max(0, sorted.length - maxJobs));
   return picked.map((j) => `${j.title} at ${j.company.name}`).join(" → ");
 }
 

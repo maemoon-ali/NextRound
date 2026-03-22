@@ -74,6 +74,31 @@ export interface LiveDataPerson {
   current_position: LiveDataJob; // their current job (where they are "now")
 }
 
+export type DegreeType =
+  | "Associate"
+  | "BA"
+  | "BS"
+  | "BEng"
+  | "MS"
+  | "MA"
+  | "MBA"
+  | "MFA"
+  | "MEng"
+  | "PhD"
+  | "JD"
+  | "MD"
+  | "Other";
+
+export interface UserEducationEntry {
+  school_name: string;
+  degree_type: DegreeType | "";
+  major: string;
+  /** Enrollment start year, e.g. 2018 */
+  start_year: number;
+  /** Graduation year; 0 = in progress */
+  end_year: number;
+}
+
 export interface UserJobEntry {
   company_name: string;
   years_employment: number;

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { InterviewSearch, type InterviewRole } from "@/components/InterviewSearch";
 
 function TechnicalInterviewLogo({ company }: { company: string }) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -75,9 +76,20 @@ function scoreReasoningFromTranscript(text: string): number {
 function InterviewTechnicalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const company = searchParams?.get("company") ?? "";
-  const role = searchParams?.get("role") ?? "Software Engineer";
-  const function_ = searchParams?.get("function") ?? "";
+  const urlCompany  = searchParams?.get("company") ?? "";
+  const urlRole     = searchParams?.get("role") ?? "";
+  const urlFunction = searchParams?.get("function") ?? "";
+
+  const [selected, setSelected] = useState<InterviewRole | null>(
+    urlCompany && urlRole
+      ? { role: urlRole, company: urlCompany, domain: "", function: urlFunction || "engineering", level: "" }
+      : null
+  );
+
+  // Derive company/role from selected (or URL params for direct links)
+  const company  = selected?.company  ?? urlCompany;
+  const role     = selected?.role     ?? urlRole     ?? "Software Engineer";
+  const function_ = selected?.function ?? urlFunction;
 
   const [phase, setPhase] = useState<"intro" | "coding" | "done">("intro");
   const [code, setCode] = useState(EXAMPLE_PROBLEM.defaultCode);
@@ -184,12 +196,28 @@ function InterviewTechnicalContent() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  // ── Search landing (no role selected yet) ────────────────────────────────
+  if (!selected && phase === "intro") {
+    return <InterviewSearch type="technical" onSelect={(r) => { setSelected(r); }} />;
+  }
+
   if (phase === "intro") {
     return (
       <div className="flex min-h-screen flex-col bg-zinc-950">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
-          <h1 className="text-lg font-semibold text-white">Mock Technical Interview</h1>
-          <Link href="/prepare" className="rounded-lg border border-zinc-600 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800">Exit</Link>
+          <h1 className="text-lg font-semibold text-white truncate">
+            Mock Technical Interview{role ? ` | ${role}` : ""}
+          </h1>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => router.push("/prepare?section=technical")}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+            >
+              ← Search
+            </button>
+            <Link href="/prepare" className="rounded-lg border border-zinc-600 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800">Exit</Link>
+          </div>
         </header>
         <main className="flex flex-1 flex-col items-center justify-center p-6">
           <div className="max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800/50 p-6 text-center">

@@ -1,9 +1,31 @@
 import type { Metadata } from "next";
-import { Inter, Orbitron } from "next/font/google";
+import { Plus_Jakarta_Sans, Orbitron, Sora, Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const orbitron = Orbitron({ subsets: ["latin"], variable: "--font-orbitron" });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+  weight: ["300", "400", "500", "600"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "NextRound",
@@ -16,12 +38,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" style={{ backgroundColor: "#0a0c0f" }}>
       <body
-        className={`${inter.variable} ${orbitron.variable} min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased`}
-        style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
+        className={`${plusJakartaSans.variable} ${orbitron.variable} ${sora.variable} ${inter.variable} min-h-screen font-sans antialiased`}
+        style={{ fontFamily: "var(--font-plus-jakarta), system-ui, sans-serif" }}
       >
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
