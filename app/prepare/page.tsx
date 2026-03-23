@@ -553,27 +553,6 @@ function PrepareContent() {
       className="page-fade-in flex flex-col h-screen overflow-hidden relative"
       style={{ background: "var(--pg-bg)" }}
     >
-      {/* ── Ambient glow orbs ────────────────────────────────────────────── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Drifting gradient layer — same system as home page */}
-        <div
-          className="absolute inset-0 opacity-85 animate-gradient-drift"
-          style={{
-            background: `
-              radial-gradient(ellipse 90% 60% at 50% -10%, rgba(16,185,129,0.20), transparent 55%),
-              radial-gradient(ellipse 70% 50% at 85% 45%, rgba(6,182,212,0.17), transparent 55%),
-              radial-gradient(ellipse 60% 45% at 15% 85%, rgba(59,130,246,0.15), transparent 55%)
-            `,
-            backgroundSize: "200% 200%, 200% 200%, 200% 200%",
-            backgroundPosition: "0% 0%, 100% 50%, 0% 100%",
-          }}
-        />
-        {/* Floating orbs */}
-        <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-emerald-400/20 blur-[120px] animate-float-slow" />
-        <div className="absolute bottom-1/3 right-1/4 w-[380px] h-[380px] rounded-full bg-cyan-500/16 blur-[100px] animate-float-slower" />
-        <div className="absolute top-1/2 right-1/3 w-[300px] h-[300px] rounded-full bg-blue-500/15 blur-[90px] animate-float-slow" style={{ animationDelay: "2s" }} />
-      </div>
-
       {/* ── Full-width header ─────────────────────────────────────────────── */}
       <header className="shrink-0 border-b backdrop-blur-2xl px-6 py-3 flex items-center gap-4 relative z-20" style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "0 4px 20px rgba(0,0,0,0.12)" }}>
         {/* Left: branding */}
@@ -631,7 +610,7 @@ function PrepareContent() {
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-1.5 h-5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.6)]" />
-                  <h2 className="text-base font-bold text-white tracking-tight">Your job history</h2>
+                  <h2 className="text-base font-bold text-white tracking-tight">Your Job History</h2>
                 </div>
                 <p className="text-sm text-white/55 mb-4 ml-3.5">
                   Enter your roles to find jobs matching your career pathway

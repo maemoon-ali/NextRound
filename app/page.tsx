@@ -358,35 +358,8 @@ export default function HomePage() {
         transition: exiting ? "opacity 0.5s ease" : "none",
       }}
     >
-      {/* Green & blue moving background */}
+      {/* Pure flat dark background — no overlays, no banding */}
       <div className="absolute inset-0 bg-[#0a0c0f]" />
-      <div
-        className="absolute inset-0 opacity-90 animate-gradient-drift"
-        style={{
-          background: `
-            radial-gradient(ellipse 90% 60% at 50% -10%, rgba(16, 185, 129, 0.22), transparent 55%),
-            radial-gradient(ellipse 70% 50% at 85% 45%, rgba(6, 182, 212, 0.2), transparent 55%),
-            radial-gradient(ellipse 60% 45% at 15% 85%, rgba(59, 130, 246, 0.18), transparent 55%)
-          `,
-          backgroundSize: "200% 200%, 200% 200%, 200% 200%",
-          backgroundPosition: "0% 0%, 100% 50%, 0% 100%",
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-80"
-        style={{
-          backgroundImage: `
-            linear-gradient(180deg, transparent 0%, rgba(10, 12, 15, 0.25) 45%, rgba(10, 12, 15, 0.85) 100%),
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E")
-          `,
-        }}
-      />
-      {/* Floating, pulsing orbs — emerald, cyan, blue */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[28rem] h-[28rem] rounded-full bg-emerald-400/25 blur-[110px] animate-float-slow" />
-        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-cyan-500/20 blur-[100px] animate-float-slower" />
-        <div className="absolute top-1/2 right-1/3 w-72 h-72 rounded-full bg-blue-500/18 blur-[90px] animate-float-slow" style={{ animationDelay: "1.5s" }} />
-      </div>
 
 
       <div className="relative z-10 flex flex-col items-center justify-center px-4 text-center flex-1 min-h-0 py-2 sm:py-4 w-full max-w-4xl mx-auto">
@@ -422,7 +395,7 @@ export default function HomePage() {
               hover:shadow-[0_0_50px_rgba(16,185,129,0.4)]
               hover:from-emerald-400 hover:to-blue-400
               focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-[#0a0c0f]
-              disabled:opacity-90
+              disabled:opacity-90 disabled:cursor-default
               transition-all duration-300 ease-out
               animate-landing-cta-in
               ${animating ? "scale-[0.97] shadow-[0_0_25px_rgba(16,185,129,0.35)]" : ""}

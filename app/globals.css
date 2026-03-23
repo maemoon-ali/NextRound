@@ -7,6 +7,29 @@ html, body {
   background-color: #0a0c0f;
 }
 
+/* Pointer cursor on all interactive elements */
+button,
+[role="button"],
+a,
+label[for],
+select,
+summary,
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="reset"],
+input[type="file"],
+input[type="range"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Page fade-in — applied to the prepare page root so it always fades in elegantly */
 @keyframes page-fade-in {
   from { opacity: 0; }
@@ -24,7 +47,8 @@ html, body {
   --salary-zero: rgba(255, 255, 255, 0.32);
   --accent: 34 197 94;
   --accent-muted: 22 163 74;
-  --pg-bg: linear-gradient(135deg, #020d1a 0%, #060f28 35%, #031a10 70%, #060e20 100%);
+  /* Pure flat dark — no gradient, no overlay, no banding possible */
+  --pg-bg: #0a0c0f;
   --pg-glass: rgba(255, 255, 255, 0.07);
   --pg-glass-hover: rgba(255, 255, 255, 0.12);
   --pg-glass-border: rgba(255, 255, 255, 0.16);
@@ -94,12 +118,9 @@ aside {
   transition: background-color 0.3s ease !important;
 }
 
-/* Hide dark-mode-only ambient glow orbs in light mode */
-.light .animate-gradient-drift,
-.light .animate-float-slow,
-.light .animate-float-slower {
-  opacity: 0 !important;
-}
+/* Ambient layers are hidden entirely — flat bg only */
+.nr-ambient,
+.nr-ambient-home { display: none !important; }
 
 body {
   font-family: var(--font-plus-jakarta), system-ui, sans-serif;
@@ -167,38 +188,10 @@ body {
   font-weight: 700;
 }
 
-/* Home: moving gradient background */
-@keyframes gradient-drift {
-  0%, 100% { background-position: 0% 0%, 100% 50%, 0% 100%; }
-  33% { background-position: 100% 0%, 50% 100%, 50% 0%; }
-  66% { background-position: 50% 100%, 0% 50%, 100% 50%; }
-}
-
-.animate-gradient-drift {
-  background-size: 200% 200%, 200% 200%, 200% 200%;
-  animation: gradient-drift 18s ease-in-out infinite;
-}
-
-/* Home: floating orbs with built-in pulse (one transform so they don't conflict) */
-@keyframes float-slow {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
-  25% { transform: translate(6%, -8%) scale(1.12); opacity: 0.75; }
-  50% { transform: translate(-4%, 2%) scale(1.05); opacity: 0.65; }
-  75% { transform: translate(3%, 6%) scale(1.1); opacity: 0.7; }
-}
-
-@keyframes float-slower {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.45; }
-  33% { transform: translate(-8%, 5%) scale(1.15); opacity: 0.68; }
-  66% { transform: translate(5%, -6%) scale(1.06); opacity: 0.55; }
-}
-
-.animate-float-slow {
-  animation: float-slow 12s ease-in-out infinite;
-}
-
-.animate-float-slower {
-  animation: float-slower 14s ease-in-out infinite;
+/* Ambient classes intentionally empty — flat bg, zero overlays */
+.nr-ambient,
+.nr-ambient-home {
+  pointer-events: none;
 }
 
 /* Home: title entrance */

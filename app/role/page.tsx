@@ -185,7 +185,7 @@ function RoleContent() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950" style={{ background: "var(--pg-bg)" }}>
+    <div className="min-h-screen bg-zinc-950" style={{ background: "var(--pg-bg)", backgroundAttachment: "fixed" }}>
       <header className="border-b border-emerald-500/20 bg-gradient-to-r from-zinc-900/90 to-emerald-950/20">
         <div className="mx-auto max-w-6xl px-4 py-5">
           <h1 className="text-xl font-semibold text-white font-brand">NextRound</h1>
