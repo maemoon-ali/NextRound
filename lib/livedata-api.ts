@@ -24,7 +24,7 @@ export type CompanyMeta = {
   top_titles_matching_filters: { title: string; count: number }[];
 };
 
-const API_BASE = `https://gotlivedata.io/api/people/v1/${process.env.LIVEDATA_ORG_ID}`;
+const API_BASE = `${process.env.LIVEDATA_API_URL ?? "https://gotlivedata.io/api/people/v1"}/${process.env.LIVEDATA_ORG_ID}`;
 const API_KEY = process.env.LIVEDATA_API_KEY ?? "";
 
 // ─── Level mappings ────────────────────────────────────────────────────────────

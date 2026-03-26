@@ -478,8 +478,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
   const eduInputClass = `nr-edu-input ${inputBase} ${inputEdu}`;
 
   // ── Education state ─────────────────────────────────────────────────────────
-  type EduPhase = "collecting" | "done" | "skipped";
-  const [eduPhase,     setEduPhase]     = useState<EduPhase>("collecting");
+  const [showEducation, setShowEducation] = useState(false);
   const [eduEntries,   setEduEntries]   = useState<UserEducationEntry[]>([{ ...defaultEdu }]);
   const [eduCollapsed, setEduCollapsed] = useState<boolean[]>([false]);
 
@@ -493,6 +492,11 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [uploadError,  setUploadError]  = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── LinkedIn import state ───────────────────────────────────────────────────
+  const [linkedinUrl,    setLinkedinUrl]    = useState("");
+  const [linkedinStatus, setLinkedinStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [linkedinError,  setLinkedinError]  = useState<string | null>(null);
 
   // ── Education helpers ───────────────────────────────────────────────────────
   function addSchool() {
@@ -512,16 +516,6 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
 
   function toggleEduCollapse(i: number) {
     setEduCollapsed((c) => c.map((v, j) => j === i ? !v : v));
-  }
-
-  function confirmEducation() {
-    // Collapse all open edu entries, then switch to done
-    setEduCollapsed(eduEntries.map(() => true));
-    setEduPhase("done");
-  }
-
-  function skipEducation() {
-    setEduPhase("skipped");
   }
 
   // ── Job history helpers ─────────────────────────────────────────────────────
@@ -594,6 +588,31 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
     }
   }
 
+  async function handleLinkedinImport() {
+    if (!linkedinUrl.trim()) return;
+    setLinkedinError(null); setLinkedinStatus("loading");
+    try {
+      const res  = await fetch("/api/import-linkedin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkedin_url: linkedinUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setLinkedinError(data?.error ?? "Failed to import profile."); setLinkedinStatus("error"); return; }
+      const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+      if (jobs.length === 0) { setLinkedinError("No job history could be extracted."); setLinkedinStatus("error"); return; }
+      setEntries(jobs.map((j: UserJobEntry) => ({ ...defaultEntry, ...j })));
+      setSalaryModes(jobs.map((j: UserJobEntry) => j.role_type === "intern" ? "hourly" : "annual"));
+      setCollapsed(jobs.map((_: UserJobEntry, idx: number) => idx < jobs.length - 1));
+      setStartYears(jobs.map(() => ""));
+      setFieldErrors(jobs.map(() => new Set<string>()));
+      setLinkedinStatus("done"); setValidationError(null); setUploadStatus("idle");
+    } catch {
+      setLinkedinError("Import failed. Please try again.");
+      setLinkedinStatus("error");
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setValidationError(null);
@@ -611,7 +630,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
       setValidationError("Please fill in all required fields for each role.");
       return;
     }
-    const education = eduPhase === "done"
+    const education = showEducation
       ? eduEntries.filter((e) => e.school_name?.trim())
       : [];
     onSubmit(
@@ -624,181 +643,54 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-6">
 
-      {/* ── STEP 1: EDUCATION ────────────────────────────────────────────────── */}
-      {eduPhase === "collecting" && (
-        <div className="nr-edu-section space-y-3">
-          {/* Section header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-4 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
-              <span className="nr-edu-heading text-sm font-semibold text-blue-200">Education</span>
-              <span className="nr-edu-subtext text-xs text-blue-400/60 font-normal">Step 1 of 2</span>
-            </div>
-            <button type="button" onClick={skipEducation}
-              className="nr-edu-util text-xs text-zinc-500 hover:text-zinc-300 transition-colors duration-150 underline underline-offset-2">
-              Skip education
-            </button>
-          </div>
-
-          {/* Education entries */}
-          {eduEntries.map((edu, i) => {
-            if (eduCollapsed[i]) {
-              return (
-                <CollapsedEducationCard key={i} edu={edu}
-                  onExpand={() => toggleEduCollapse(i)}
-                  onRemove={() => removeSchool(i)} />
-              );
-            }
-            return (
-              <div key={i} className={eduCardClass}>
-                <div className="flex items-center justify-between">
-                  <span className="nr-edu-heading text-sm font-medium text-blue-200">
-                    School {i + 1}
-                    {i === 0 && <span className="nr-edu-subtext ml-1.5 text-xs text-blue-400/60 font-normal">(most recent)</span>}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    {eduEntries.length > 1 && (
-                      <button type="button" onClick={() => toggleEduCollapse(i)}
-                        className="nr-edu-util text-sm text-zinc-500 hover:text-zinc-300">Collapse</button>
-                    )}
-                    {eduEntries.length > 1 && (
-                      <button type="button" onClick={() => removeSchool(i)}
-                        className="text-sm text-red-400 hover:text-red-300">Remove</button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 items-start">
-                  {/* School name (autocomplete) — spans full width */}
-                  <div className="sm:col-span-2">
-                    <SchoolInput value={edu.school_name} onChange={(v) => updateEdu(i, "school_name", v)}
-                      inputClass={eduInputClass} labelClass={eduLabelClass} />
-                  </div>
-
-                  {/* Degree type — pill selector */}
-                  <div className="sm:col-span-2">
-                    <span className={eduLabelClass}>Degree Type</span>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {DEGREE_TYPES.map((d) => {
-                        const active = edu.degree_type === d;
-                        return (
-                          <button key={d} type="button" onClick={() => updateEdu(i, "degree_type", d)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border ${
-                              active
-                                ? "nr-deg-active bg-blue-500/20 text-blue-300 border-blue-400/50"
-                                : "nr-deg-inactive bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white/75"
-                            }`}>
-                            {d}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Major */}
-                  <label className="block sm:col-span-2">
-                    <span className={eduLabelClass}>Major / Field of Study</span>
-                    <input type="text" value={edu.major} onChange={(e) => updateEdu(i, "major", e.target.value)}
-                      className={eduInputClass} placeholder="e.g. Computer Science" />
-                  </label>
-
-                  {/* Start year + End year */}
-                  <label className="block">
-                    <span className={eduLabelClass}>Start Year</span>
-                    <input type="number" min={1950} max={CURRENT_YEAR}
-                      value={edu.start_year || ""}
-                      onChange={(e) => {
-                        const n = parseInt(e.target.value, 10);
-                        updateEdu(i, "start_year", isNaN(n) ? 0 : n);
-                      }}
-                      placeholder={String(CURRENT_YEAR - 4)}
-                      className={eduInputClass} />
-                  </label>
-                  <label className="block">
-                    <span className={eduLabelClass}>Graduation Year</span>
-                    <input type="number" min={1950} max={CURRENT_YEAR + 10}
-                      value={edu.end_year || ""}
-                      onChange={(e) => {
-                        const n = parseInt(e.target.value, 10);
-                        updateEdu(i, "end_year", isNaN(n) ? 0 : n);
-                      }}
-                      placeholder={String(CURRENT_YEAR)}
-                      className={eduInputClass} />
-                    <p className="nr-edu-hint mt-1 text-[10px] text-blue-400/50">Leave blank if in progress</p>
-                  </label>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Add school / continue row */}
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            {eduEntries.length < MAX_SCHOOLS && (
-              <button type="button" onClick={addSchool}
-                className="nr-edu-heading text-sm text-blue-400 hover:text-blue-200 transition-colors duration-150 flex items-center gap-1">
-                <span className="text-base leading-none">+</span> Add another school
-              </button>
-            )}
-            <div className="flex-1" />
-            <LiquidButton type="button" onClick={confirmEducation} size="sm"
-              className="text-blue-200 border-blue-500/40">
-              Continue to Job History →
-            </LiquidButton>
-          </div>
+      {/* ── IMPORT TOOLS (always at top) ─────────────────────────────────────── */}
+      <div className="space-y-3">
+        {/* Resume upload */}
+        <div className="flex flex-wrap items-center gap-3">
+          <input ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
+            onChange={handleResumeUpload} className="hidden" aria-hidden />
+          <LiquidButton type="button" onClick={() => fileInputRef.current?.click()}
+            disabled={uploadStatus === "uploading"} size="sm" className="text-emerald-200">
+            {uploadStatus === "uploading" ? "Parsing…" : "Upload Resume"}
+          </LiquidButton>
+          {uploadStatus === "done" && <span className="text-sm text-emerald-400">Job history filled from resume.</span>}
+          {uploadError && <p className="text-amber-400 text-sm" role="alert">{uploadError}</p>}
         </div>
-      )}
 
-      {/* ── Collapsed education summary (after confirming) ─────────────────── */}
-      {eduPhase === "done" && eduEntries.filter((e) => e.school_name?.trim()).length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-4 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
-            <span className="text-xs font-semibold text-blue-300">Education</span>
-            <button type="button" onClick={() => setEduPhase("collecting")}
-              className="ml-auto text-[10px] text-blue-500/60 hover:text-blue-300 transition-colors duration-150">
-              Edit
-            </button>
+        {/* LinkedIn URL */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-zinc-500">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+            </span>
+            <input
+              type="url"
+              value={linkedinUrl}
+              onChange={(e) => { setLinkedinUrl(e.target.value); setLinkedinStatus("idle"); setLinkedinError(null); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleLinkedinImport(); } }}
+              placeholder="linkedin.com/in/yourname"
+              className="w-full rounded-lg pl-8 pr-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800 placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+            />
           </div>
-          {eduEntries.map((edu, i) =>
-            edu.school_name?.trim() ? (
-              <CollapsedEducationCard key={i} edu={edu}
-                onExpand={() => { setEduPhase("collecting"); setEduCollapsed((c) => c.map((v, j) => j === i ? false : v)); }}
-                onRemove={() => {
-                  removeSchool(i);
-                  if (eduEntries.length <= 1) setEduPhase("skipped");
-                }} />
-            ) : null
-          )}
+          <LiquidButton type="button" onClick={handleLinkedinImport}
+            disabled={linkedinStatus === "loading" || !linkedinUrl.trim()} size="sm" className="text-emerald-200 shrink-0">
+            {linkedinStatus === "loading" ? "Importing…" : "Import"}
+          </LiquidButton>
+          {linkedinStatus === "done" && <span className="text-sm text-emerald-400">Imported from LinkedIn.</span>}
         </div>
-      )}
+        {linkedinError && <p className="text-amber-400 text-sm" role="alert">{linkedinError}</p>}
+      </div>
 
-      {/* ── STEP 2: JOB HISTORY (shows once education step is resolved) ──────── */}
-      {(eduPhase === "done" || eduPhase === "skipped") && (
-        <>
+      {/* ── JOB HISTORY ──────────────────────────────────────────────────────── */}
+      <>
           {/* Section header */}
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
             <span className="text-sm font-semibold text-zinc-200">Job History</span>
-            {eduPhase === "skipped" && (
-              <button type="button" onClick={() => setEduPhase("collecting")}
-                className="ml-auto text-xs text-blue-500/60 hover:text-blue-300 transition-colors duration-150">
-                + Add Education
-              </button>
-            )}
           </div>
 
-          {/* Resume upload */}
-          <div className="flex flex-wrap items-center gap-3">
-            <input ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
-              onChange={handleResumeUpload} className="hidden" aria-hidden />
-            <LiquidButton type="button" onClick={() => fileInputRef.current?.click()}
-              disabled={uploadStatus === "uploading"} size="sm" className="text-emerald-200">
-              {uploadStatus === "uploading" ? "Parsing…" : "Upload Resume"}
-            </LiquidButton>
-            {uploadStatus === "done" && <span className="text-sm text-emerald-400">Job history filled from resume.</span>}
-          </div>
-
-          {uploadError     && <p className="text-amber-400 text-sm" role="alert">{uploadError}</p>}
           {validationError && <p className="text-amber-400 text-sm" role="alert">{validationError}</p>}
 
           {/* Job entries */}
@@ -890,14 +782,15 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
 
                     <label className="block">
                       <span className={labelClass}>Years of Employment</span>
-                      <input type="number" min={0} step={0.5}
+                      <input type="number" min={0} step={0.1}
                         value={entry.years_employment === 0 ? "" : (entry.years_employment ?? "")}
                         onChange={(e) => {
                           const v = e.target.value;
-                          update(i, "years_employment", v === "" ? 0 : parseFloat(v) || 0);
+                          const parsed = parseFloat(v);
+                          update(i, "years_employment", v === "" ? 0 : isNaN(parsed) ? 0 : parsed);
                         }}
                         className={errCls(inputClass, errs.has("years_employment"))}
-                        placeholder="2.5" />
+                        placeholder="e.g. 0.5, 1.5, 4.9" />
                       {errs.has("years_employment") && <p className="mt-1 text-[11px] text-red-400">Required</p>}
                     </label>
 
@@ -919,8 +812,116 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
               {loading ? "Matching…" : "Find similar roles & start practice"}
             </LiquidButton>
           </div>
+
+          {/* ── EDUCATION (optional) ───────────────────────────────────────────── */}
+          {!showEducation && (
+            <button type="button" onClick={() => setShowEducation(true)}
+              className="text-xs text-blue-400/60 hover:text-blue-300 transition-colors duration-150">
+              + Add Education <span className="text-zinc-600">(optional)</span>
+            </button>
+          )}
+
+          {showEducation && (
+            <div className="nr-edu-section space-y-3 pt-2 border-t border-zinc-700/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
+                  <span className="nr-edu-heading text-sm font-semibold text-blue-200">Education</span>
+                  <span className="text-xs text-zinc-600">(optional)</span>
+                </div>
+                <button type="button" onClick={() => setShowEducation(false)}
+                  className="nr-edu-util text-xs text-zinc-500 hover:text-zinc-300 transition-colors duration-150 underline underline-offset-2">
+                  Hide
+                </button>
+              </div>
+
+              {eduEntries.map((edu, i) => {
+                if (eduCollapsed[i]) {
+                  return (
+                    <CollapsedEducationCard key={i} edu={edu}
+                      onExpand={() => toggleEduCollapse(i)}
+                      onRemove={() => removeSchool(i)} />
+                  );
+                }
+                return (
+                  <div key={i} className={eduCardClass}>
+                    <div className="flex items-center justify-between">
+                      <span className="nr-edu-heading text-sm font-medium text-blue-200">
+                        School {i + 1}
+                        {i === 0 && <span className="nr-edu-subtext ml-1.5 text-xs text-blue-400/60 font-normal">(most recent)</span>}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {eduEntries.length > 1 && (
+                          <button type="button" onClick={() => toggleEduCollapse(i)}
+                            className="nr-edu-util text-sm text-zinc-500 hover:text-zinc-300">Collapse</button>
+                        )}
+                        {eduEntries.length > 1 && (
+                          <button type="button" onClick={() => removeSchool(i)}
+                            className="text-sm text-red-400 hover:text-red-300">Remove</button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 items-start">
+                      <div className="sm:col-span-2">
+                        <SchoolInput value={edu.school_name} onChange={(v) => updateEdu(i, "school_name", v)}
+                          inputClass={eduInputClass} labelClass={eduLabelClass} />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <span className={eduLabelClass}>Degree Type</span>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {DEGREE_TYPES.map((d) => {
+                            const active = edu.degree_type === d;
+                            return (
+                              <button key={d} type="button" onClick={() => updateEdu(i, "degree_type", d)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border ${
+                                  active
+                                    ? "nr-deg-active bg-blue-500/20 text-blue-300 border-blue-400/50"
+                                    : "nr-deg-inactive bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white/75"
+                                }`}>
+                                {d}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <label className="block sm:col-span-2">
+                        <span className={eduLabelClass}>Major / Field of Study</span>
+                        <input type="text" value={edu.major} onChange={(e) => updateEdu(i, "major", e.target.value)}
+                          className={eduInputClass} placeholder="e.g. Computer Science" />
+                      </label>
+
+                      <label className="block">
+                        <span className={eduLabelClass}>Start Year</span>
+                        <input type="number" min={1950} max={CURRENT_YEAR}
+                          value={edu.start_year || ""}
+                          onChange={(e) => { const n = parseInt(e.target.value, 10); updateEdu(i, "start_year", isNaN(n) ? 0 : n); }}
+                          placeholder={String(CURRENT_YEAR - 4)} className={eduInputClass} />
+                      </label>
+                      <label className="block">
+                        <span className={eduLabelClass}>Graduation Year</span>
+                        <input type="number" min={1950} max={CURRENT_YEAR + 10}
+                          value={edu.end_year || ""}
+                          onChange={(e) => { const n = parseInt(e.target.value, 10); updateEdu(i, "end_year", isNaN(n) ? 0 : n); }}
+                          placeholder={String(CURRENT_YEAR)} className={eduInputClass} />
+                        <p className="nr-edu-hint mt-1 text-[10px] text-blue-400/50">Leave blank if in progress</p>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {eduEntries.length < MAX_SCHOOLS && (
+                <button type="button" onClick={addSchool}
+                  className="nr-edu-heading text-sm text-blue-400 hover:text-blue-200 transition-colors duration-150 flex items-center gap-1">
+                  <span className="text-base leading-none">+</span> Add another school
+                </button>
+              )}
+            </div>
+          )}
         </>
-      )}
     </form>
   );
 }
