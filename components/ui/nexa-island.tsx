@@ -12,6 +12,42 @@ interface Message {
   text: string;
 }
 
+interface UserContext {
+  jobHistory: { title: string; company: string; years: number }[];
+  savedRoles: { role: string; company: string }[];
+  targetRole?: string;
+  targetCompany?: string;
+}
+
+/** Read the user's job history + saved roles from storage so Nexa can personalise */
+function readUserContext(): UserContext {
+  try {
+    // Job history — stored in sessionStorage by the prepare page
+    const session = sessionStorage.getItem("nr_prepare_state");
+    const matches: { role?: string; company?: string; function?: string }[] =
+      session ? JSON.parse(session).matches ?? [] : [];
+
+    // Saved/bookmarked roles — stored in localStorage by bookmarks lib
+    const raw = localStorage.getItem("mock-interview-bookmarks");
+    const bookmarks: { role: string; company: string }[] = raw
+      ? JSON.parse(raw).map((b: { role?: string; title?: string; company: string }) => ({
+          role: b.role ?? b.title ?? "",
+          company: b.company,
+        }))
+      : [];
+
+    // Infer target role/company from top match
+    const top = matches[0];
+
+    return {
+      jobHistory: [],          // form state isn't persisted; populated via matches context
+      savedRoles: bookmarks.slice(0, 5),
+      targetRole: top?.role ?? top?.function,
+      targetCompany: top?.company,
+    };
+  } catch { return { jobHistory: [], savedRoles: [] }; }
+}
+
 // ── Constants ────────────────────────────────────────────────────────────────
 const CIRCLE_SIZE = 140;
 const PILL_W      = 900;
@@ -261,7 +297,7 @@ export function NexaIsland({ onClose }: { onClose?: () => void }) {
       const res = await fetch("/api/nexa-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, userMessage: text }),
+        body: JSON.stringify({ messages: history, userMessage: text, userContext: readUserContext() }),
       });
 
       if (!res.ok) throw new Error("bad response");

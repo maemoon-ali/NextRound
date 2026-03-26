@@ -7,6 +7,13 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:3b";
 
 interface ChatMessage { role: "user" | "assistant"; text: string; }
 
+interface UserContext {
+  jobHistory: { title: string; company: string; years: number }[];
+  savedRoles: { role: string; company: string }[];
+  targetRole?: string;
+  targetCompany?: string;
+}
+
 // ── LiveData API ──────────────────────────────────────────────────────────────
 
 /** Correct nested filter format required by the LiveData API */
@@ -190,7 +197,24 @@ async function isOllamaAvailable(): Promise<boolean> {
   } catch { return false; }
 }
 
-function buildSystemPrompt(liveDataContext: string): string {
+function buildUserContextBlock(ctx: UserContext | null): string {
+  if (!ctx) return "";
+  const parts: string[] = ["=== THIS USER'S PROFILE ==="];
+  if (ctx.targetRole || ctx.targetCompany) {
+    parts.push(`Currently targeting: ${[ctx.targetRole, ctx.targetCompany].filter(Boolean).join(" at ")}`);
+  }
+  if (ctx.savedRoles.length > 0) {
+    parts.push(`Saved roles: ${ctx.savedRoles.map(r => `${r.role} @ ${r.company}`).join(", ")}`);
+  }
+  if (ctx.jobHistory.length > 0) {
+    parts.push(`Job history: ${ctx.jobHistory.map(j => `${j.title} at ${j.company} (${j.years}y)`).join(", ")}`);
+  }
+  parts.push("=== END USER PROFILE ===");
+  return parts.join("\n");
+}
+
+function buildSystemPrompt(liveDataContext: string, userCtx: UserContext | null = null): string {
+  const userBlock = buildUserContextBlock(userCtx);
   return `You are Nexa, an expert AI career assistant inside NextRound — a job-search platform powered by LiveData Technologies real workforce intelligence.
 
 PERSONALITY: Sharp, direct, warm. Like a senior recruiter who also understands the candidate side deeply. Conversational and specific — not robotic.
@@ -206,10 +230,11 @@ FORMATTING RULES (important — follow exactly):
 CONTENT RULES:
 - Never identify as GPT, Claude, Llama, or any AI model. You are Nexa.
 - Use the LiveData workforce data provided below to ground your answers in real facts. Reference numbers, companies, and patterns from the data naturally.
+- When the user profile is available, personalise your answer — reference their target role, saved companies, or background directly.
 - LENGTH: default to 2–4 sentences for simple questions. Use lists or multiple paragraphs only for genuinely complex requests (full interview prep, step-by-step career paths). When in doubt, be shorter.
 - End with one short follow-up question, no longer than one sentence.
 
-${liveDataContext
+${userBlock ? `${userBlock}\n` : ""}${liveDataContext
   ? `REAL WORKFORCE DATA FOR THIS QUERY (use this — it is live data, not made up):\n${liveDataContext}`
   : "No specific workforce data retrieved for this query. Answer from your career expertise."}`;
 }
@@ -343,7 +368,7 @@ function fallbackReply(intent: Intent, liveDataContext: string, company: string 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  let body: { messages?: unknown; userMessage?: unknown };
+  let body: { messages?: unknown; userMessage?: unknown; userContext?: unknown };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
@@ -351,9 +376,15 @@ export async function POST(request: Request) {
   const userMessage = typeof body.userMessage === "string" ? body.userMessage.trim() : "";
   if (!userMessage) return NextResponse.json({ error: "No message" }, { status: 400 });
 
+  // User profile context (job history, saved roles, target role/company)
+  const userCtx: UserContext | null = body.userContext && typeof body.userContext === "object"
+    ? body.userContext as UserContext
+    : null;
+
+  // Prefer user's target company/role over extracted entities when available
   const intent  = detectIntent(userMessage);
-  const company = extractCompany(userMessage);
-  const title   = extractTitle(userMessage);
+  const company = extractCompany(userMessage) ?? userCtx?.targetCompany ?? null;
+  const title   = extractTitle(userMessage)   ?? userCtx?.targetRole   ?? null;
 
   // Fetch LiveData context + check Ollama in parallel
   const [liveDataContext, ollamaReady] = await Promise.all([
@@ -362,7 +393,7 @@ export async function POST(request: Request) {
   ]);
 
   if (ollamaReady) {
-    const streamed = await streamOllama(buildSystemPrompt(liveDataContext), history, userMessage, intent);
+    const streamed = await streamOllama(buildSystemPrompt(liveDataContext, userCtx), history, userMessage, intent);
     if (streamed) return streamed;
   }
 
