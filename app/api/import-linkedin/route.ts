@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { UserJobEntry } from "@/lib/livedata-types";
+import type { UserJobEntry, UserEducationEntry, DegreeType } from "@/lib/livedata-types";
 
 const LIVEDATA_API_KEY = process.env.LIVEDATA_API_KEY;
 const LIVEDATA_API_URL = process.env.LIVEDATA_API_URL ?? "https://gotlivedata.io/api/people/v1";
@@ -36,6 +36,18 @@ interface RawJob {
   company_name?: string;
 }
 
+interface RawEducation {
+  school?: { name?: string };
+  school_name?: string;
+  degree?: string;
+  field_of_study?: string;
+  major?: string;
+  started_at?: string;
+  ended_at?: string;
+  start_year?: number;
+  end_year?: number;
+}
+
 interface RawPerson {
   id?: string;
   name?: string;
@@ -43,6 +55,8 @@ interface RawPerson {
   last_name?: string;
   position?: RawJob;
   jobs?: RawJob[];
+  education?: RawEducation[];
+  schools?: RawEducation[];
 }
 
 function mapJob(raw: RawJob): UserJobEntry {
@@ -53,6 +67,43 @@ function mapJob(raw: RawJob): UserJobEntry {
     salary: raw.salary ?? 0,
     role_type: "full-time",
     location: raw.location ?? "",
+  };
+}
+
+const DEGREE_MAP: Record<string, DegreeType> = {
+  bachelor: "BS", "bachelor of science": "BS", "bachelor of arts": "BA",
+  "b.s.": "BS", "b.a.": "BA", bs: "BS", ba: "BA",
+  "bachelor of engineering": "BEng", beng: "BEng",
+  master: "MS", "master of science": "MS", "master of arts": "MA",
+  "m.s.": "MS", "m.a.": "MA", ms: "MS", ma: "MA",
+  mba: "MBA", "master of business administration": "MBA",
+  "master of engineering": "MEng", meng: "MEng",
+  "master of fine arts": "MFA", mfa: "MFA",
+  phd: "PhD", "ph.d.": "PhD", "doctor of philosophy": "PhD",
+  associate: "Associate",
+  jd: "JD", "juris doctor": "JD",
+  md: "MD", "doctor of medicine": "MD",
+};
+
+function normaliseDegree(raw?: string): DegreeType | "" {
+  if (!raw) return "";
+  const key = raw.toLowerCase().trim();
+  for (const [k, v] of Object.entries(DEGREE_MAP)) {
+    if (key.includes(k)) return v;
+  }
+  return "Other";
+}
+
+function mapEducation(raw: RawEducation): UserEducationEntry {
+  const schoolName = raw.school?.name ?? raw.school_name ?? "";
+  const startYear  = raw.start_year ?? (raw.started_at ? new Date(raw.started_at).getFullYear() : 0);
+  const endYear    = raw.end_year   ?? (raw.ended_at   ? new Date(raw.ended_at).getFullYear()   : 0);
+  return {
+    school_name:  schoolName,
+    degree_type:  normaliseDegree(raw.degree),
+    major:        raw.field_of_study ?? raw.major ?? "",
+    start_year:   startYear,
+    end_year:     endYear,
   };
 }
 
@@ -164,6 +215,8 @@ export async function POST(req: NextRequest) {
   const fullName = [person.first_name, person.last_name].filter(Boolean).join(" ");
   const display_name = person.name ?? (fullName || null);
 
+  // Merge position + jobs, then deduplicate by (title, company) to prevent
+  // the current role appearing twice (once in position and once in jobs[])
   const rawJobs: RawJob[] = [
     ...(person.position ? [person.position] : []),
     ...(person.jobs ?? []),
@@ -173,6 +226,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Profile found but no job history could be extracted." }, { status: 404 });
   }
 
-  const jobs: UserJobEntry[] = rawJobs.map(mapJob).filter((j) => j.company_name && j.title);
-  return NextResponse.json({ jobs, display_name });
+  const seen = new Set<string>();
+  const jobs: UserJobEntry[] = rawJobs
+    .map(mapJob)
+    .filter((j) => {
+      if (!j.company_name || !j.title) return false;
+      const key = `${j.title.toLowerCase().trim()}|${j.company_name.toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+  // Parse education if the API returns it
+  const rawEdu: RawEducation[] = person.education ?? person.schools ?? [];
+  const education: UserEducationEntry[] = rawEdu
+    .map(mapEducation)
+    .filter((e) => e.school_name.trim().length > 0);
+
+  return NextResponse.json({ jobs, education, display_name });
 }

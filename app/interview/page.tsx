@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Suspense, useState, useEffect } from "react";
 import { InterviewRoom } from "@/components/InterviewRoom";
 import { InterviewSearch, type InterviewRole } from "@/components/InterviewSearch";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import type { JobFunction } from "@/lib/livedata-types";
 import { getQuestionsForFunction, getQuestionsForInterview } from "@/lib/behavioral-questions";
 
@@ -45,15 +46,7 @@ function InterviewContent() {
         <header className="shrink-0 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {selected.company && (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`https://logo.clearbit.com/${selected.domain || selected.company.toLowerCase().replace(/\s+/g,"") + ".com"}`}
-                  alt=""
-                  className="h-full w-full object-contain p-0.5"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              </div>
+              <CompanyLogo name={selected.company} domain={selected.domain} size="h-10 w-10" />
             )}
             <h1 className="text-lg font-semibold text-white truncate">
               Mock Interview{selected.role ? ` | ${selected.role}` : ""}

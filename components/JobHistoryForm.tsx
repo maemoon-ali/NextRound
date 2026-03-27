@@ -578,7 +578,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
       if (jobs.length === 0) { setUploadError("No job history could be extracted."); setUploadStatus("error"); return; }
       setEntries(jobs.map((j: UserJobEntry) => ({ ...defaultEntry, ...j })));
       setSalaryModes(jobs.map((j: UserJobEntry) => j.role_type === "intern" ? "hourly" : "annual"));
-      setCollapsed(jobs.map((_: UserJobEntry, idx: number) => idx < jobs.length - 1));
+      setCollapsed(jobs.map(() => true));
       setStartYears(jobs.map(() => ""));
       setFieldErrors(jobs.map(() => new Set<string>()));
       setUploadStatus("done"); setValidationError(null);
@@ -603,9 +603,16 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
       if (jobs.length === 0) { setLinkedinError("No job history could be extracted."); setLinkedinStatus("error"); return; }
       setEntries(jobs.map((j: UserJobEntry) => ({ ...defaultEntry, ...j })));
       setSalaryModes(jobs.map((j: UserJobEntry) => j.role_type === "intern" ? "hourly" : "annual"));
-      setCollapsed(jobs.map((_: UserJobEntry, idx: number) => idx < jobs.length - 1));
+      // Collapse ALL imported jobs — none left open as a raw form
+      setCollapsed(jobs.map(() => true));
       setStartYears(jobs.map(() => ""));
       setFieldErrors(jobs.map(() => new Set<string>()));
+      // Populate education if the API returned it
+      const edu = Array.isArray(data.education) ? data.education : [];
+      if (edu.length > 0) {
+        setEduEntries(edu.map((e: UserEducationEntry) => ({ ...defaultEdu, ...e })));
+        setShowEducation(true);
+      }
       setLinkedinStatus("done"); setValidationError(null); setUploadStatus("idle");
     } catch {
       setLinkedinError("Import failed. Please try again.");
@@ -666,7 +673,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
               </svg>
             </span>
             <input
-              type="url"
+              type="text"
               value={linkedinUrl}
               onChange={(e) => { setLinkedinUrl(e.target.value); setLinkedinStatus("idle"); setLinkedinError(null); }}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleLinkedinImport(); } }}
@@ -804,25 +811,35 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <LiquidButton type="button" onClick={addJob} size="sm" className="text-emerald-200">
-              + Add another role
-            </LiquidButton>
-            <LiquidButton type="submit" disabled={loading} size="default" className="text-white font-medium">
-              {loading ? "Matching…" : "Find similar roles & start practice"}
-            </LiquidButton>
-          </div>
+          {/* ── Bottom actions block — single space-y-6 child so margins don't bleed ── */}
+          <div className="flex flex-col gap-3">
 
-          {/* ── EDUCATION (optional) ───────────────────────────────────────────── */}
-          {!showEducation && (
-            <button type="button" onClick={() => setShowEducation(true)}
-              className="text-xs text-blue-400/60 hover:text-blue-300 transition-colors duration-150">
-              + Add Education <span className="text-zinc-600">(optional)</span>
-            </button>
-          )}
+            <div className="flex flex-wrap items-center gap-3">
+              <LiquidButton type="button" onClick={addJob} size="sm" className="text-emerald-200">
+                + Add another role
+              </LiquidButton>
+            </div>
 
-          {showEducation && (
-            <div className="nr-edu-section space-y-3 pt-2 border-t border-zinc-700/40">
+            {/* ── EDUCATION (optional) ───────────────────────────────────────────── */}
+            {!showEducation && (
+              <button type="button" onClick={() => setShowEducation(true)}
+                className="text-xs text-blue-400/60 hover:text-blue-300 transition-colors duration-150 w-fit">
+                + Add Education <span className="text-zinc-600">(optional)</span>
+              </button>
+            )}
+
+            {/* Animated education panel — slides in/out with grid-template-rows trick */}
+            <div
+              style={{
+                display: showEducation ? "grid" : "none",
+                gridTemplateRows: showEducation ? "1fr" : "0fr",
+                opacity: showEducation ? 1 : 0,
+                transition: "grid-template-rows 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease",
+              }}
+            >
+            <div style={{ overflow: "hidden" }}>
+            {showEducation && (
+              <div className="nr-edu-section space-y-3 pt-3 border-t border-zinc-700/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-4 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
@@ -919,8 +936,17 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
                   <span className="text-base leading-none">+</span> Add another school
                 </button>
               )}
+              </div>
+            )}
             </div>
-          )}
+            </div>
+
+            {/* Submit — sits directly below education, moves with it */}
+            <LiquidButton type="submit" disabled={loading} size="default" className="text-white font-medium w-fit">
+              {loading ? "Matching…" : "Find similar roles & start practice"}
+            </LiquidButton>
+
+          </div>{/* end bottom actions block */}
         </>
     </form>
   );

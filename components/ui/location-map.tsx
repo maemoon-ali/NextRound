@@ -58,7 +58,7 @@ function MapModal({ company, location, onClose }: MapModalProps) {
       }}
     >
       <div style={{
-        width: "100%", maxWidth: 560, borderRadius: 18,
+        width: "100%", maxWidth: 720, borderRadius: 18,
         background: "rgba(13,15,20,0.99)",
         border: "1px solid rgba(255,255,255,0.12)",
         boxShadow: "0 32px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.09)",
@@ -87,7 +87,7 @@ function MapModal({ company, location, onClose }: MapModalProps) {
         </div>
 
         {/* Map */}
-        <div style={{ position: "relative", width: "100%", height: 320, background: "#0d0f14" }}>
+        <div style={{ position: "relative", width: "100%", height: 420, background: "#0d0f14" }}>
           <iframe src={gmapsEmbed} title="Office location map" style={{
             width: "100%", height: "100%", border: "none", display: "block",
             filter: "invert(1) hue-rotate(180deg) brightness(0.82) saturate(1.15)",

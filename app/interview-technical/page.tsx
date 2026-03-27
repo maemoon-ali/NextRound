@@ -5,31 +5,7 @@ import Link from "next/link";
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { InterviewSearch, type InterviewRole } from "@/components/InterviewSearch";
-
-function TechnicalInterviewLogo({ company }: { company: string }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const initial = (company || "?").trim().slice(0, 2).toUpperCase() || "?";
-  const hue = (company || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
-  const logoSrc = company?.trim() ? `/api/logo?company=${encodeURIComponent(company.trim())}` : "";
-  if (logoSrc && !imgFailed) {
-    return (
-      <img
-        src={logoSrc}
-        alt=""
-        className="h-8 w-8 shrink-0 rounded object-contain"
-        onError={() => setImgFailed(true)}
-      />
-    );
-  }
-  return (
-    <span
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-xs font-bold text-white"
-      style={{ backgroundColor: `hsl(${hue}, 55%, 40%)` }}
-    >
-      {initial}
-    </span>
-  );
-}
+import { CompanyLogo } from "@/components/ui/company-logo";
 
 const TIME_LIMIT_MS = 15 * 60 * 1000;
 
@@ -244,7 +220,7 @@ function InterviewTechnicalContent() {
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-800 px-4 py-2">
           <div className="flex items-center gap-4 min-w-0">
             <div className="flex items-center gap-2.5 min-w-0">
-              {company && <TechnicalInterviewLogo company={company} />}
+              {company && <CompanyLogo name={company} size="h-8 w-8" />}
               <h1 className="text-lg font-semibold text-white truncate">
                 Mock Technical Interview{company ? ` | ${company}` : ""}
               </h1>
