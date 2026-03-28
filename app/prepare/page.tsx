@@ -980,12 +980,27 @@ function PrepareContent() {
                       }}>
                         {/* Heading */}
                         <div style={{ textAlign: "center" }}>
-                          <h1 style={{
-                            fontSize: 54, fontWeight: 800, letterSpacing: "-0.035em",
-                            lineHeight: 1, color: "#ffffff", margin: 0,
-                          }}>
-                            Timeline
-                          </h1>
+                          {/* "Timeline" word with ambient scan line sweeping over it */}
+                          <div style={{ position: "relative", display: "inline-block" }}>
+                            <h1 style={{
+                              fontSize: 54, fontWeight: 800, letterSpacing: "-0.035em",
+                              lineHeight: 1, color: "#ffffff", margin: 0,
+                            }}>
+                              Timeline
+                            </h1>
+                            {/* Glow halo */}
+                            <div className="animate-tl-scan" style={{
+                              position: "absolute", width: "100%", height: 8, borderRadius: 4,
+                              background: "rgba(167,139,250,0.50)", left: 0, top: 0,
+                              filter: "blur(10px)", pointerEvents: "none", zIndex: 1,
+                            }} />
+                            {/* Sharp laser */}
+                            <div className="animate-tl-scan" style={{
+                              position: "absolute", width: "100%", height: 3.5, borderRadius: 2,
+                              background: "#a78bfa", left: 0, top: 0,
+                              opacity: 0.82, pointerEvents: "none", zIndex: 2,
+                            }} />
+                          </div>
                           <p style={{
                             marginTop: 10, fontSize: 15.5, fontWeight: 400,
                             color: "rgba(255,255,255,0.38)", lineHeight: 1.5,
@@ -1002,13 +1017,15 @@ function PrepareContent() {
                           </p>
                         </div>
 
-                        {/* Pill search bar with LinkedIn logo */}
+                        {/* Pill search bar with LinkedIn logo + ambient scan line */}
                         <div style={{
+                          position: "relative",
                           display: "flex",
                           alignItems: "center",
                           width: "min(460px, 100%)",
                           height: 54,
                           borderRadius: 9999,
+                          overflow: "hidden",
                           background: "rgba(255,255,255,0.055)",
                           border: "1px solid rgba(255,255,255,0.13)",
                           padding: "0 7px 0 16px",
@@ -1018,8 +1035,20 @@ function PrepareContent() {
                           onFocus={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(167,139,250,0.4)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 4px rgba(167,139,250,0.10), 0 4px 24px rgba(0,0,0,0.3)"; }}
                           onBlur={(e) =>  { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.13)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.3)"; }}
                         >
+                          {/* Scan lines inside the pill — clipped by overflow:hidden */}
+                          <div className="animate-tl-scan" style={{
+                            position: "absolute", width: "100%", height: 8, borderRadius: 0,
+                            background: "rgba(167,139,250,0.35)", left: 0, top: 0,
+                            filter: "blur(8px)", pointerEvents: "none", zIndex: 1,
+                          }} />
+                          <div className="animate-tl-scan" style={{
+                            position: "absolute", width: "100%", height: 2.5,
+                            background: "#a78bfa", left: 0, top: 0,
+                            opacity: 0.65, pointerEvents: "none", zIndex: 2,
+                          }} />
+
                           {/* LinkedIn logo */}
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, position: "relative", zIndex: 3 }}>
                             <rect width="24" height="24" rx="4" fill="#0A66C2"/>
                             <path d="M7.5 10.5H5V19H7.5V10.5Z" fill="white"/>
                             <circle cx="6.25" cy="7.5" r="1.5" fill="white"/>
@@ -1042,6 +1071,8 @@ function PrepareContent() {
                               color: "#ffffff",
                               padding: "0 12px",
                               minWidth: 0,
+                              position: "relative",
+                              zIndex: 3,
                             }}
                           />
 
@@ -1051,7 +1082,7 @@ function PrepareContent() {
                             onClick={generateTimeline}
                             disabled={!tlLinkedinUrl.trim()}
                             style={{
-                              width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                              width: 40, height: 40, borderRadius: "50%", flexShrink: 0, position: "relative", zIndex: 3,
                               background: tlLinkedinUrl.trim() ? "rgba(167,139,250,0.22)" : "rgba(255,255,255,0.05)",
                               border: `1px solid ${tlLinkedinUrl.trim() ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
