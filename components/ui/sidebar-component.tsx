@@ -51,7 +51,7 @@ function useThemeToggle() {
 }
 
 // ── Types ───────────────────────────────────────────────────────────────────
-export type SidebarSection = "matches" | "history" | "saved" | "behavioral" | "technical" | "progress" | "settings";
+export type SidebarSection = "matches" | "history" | "saved" | "behavioral" | "technical" | "progress" | "settings" | "timeline";
 
 interface NavItem {
   id: SidebarSection | "home";
@@ -151,11 +151,12 @@ function getSidebarContent(
   opts: {
     activeTab: "recommended" | "saved" | "attempted" | "timeline";
     onTabChange: (t: "recommended" | "saved" | "attempted" | "timeline") => void;
+    onSectionChange?: (s: SidebarSection) => void;
     savedCount: number;
     attemptedCount: number;
   }
 ): SidebarContent {
-  const { activeTab, onTabChange, savedCount, attemptedCount } = opts;
+  const { activeTab, onTabChange, onSectionChange, savedCount, attemptedCount } = opts;
 
   const contentMap: Record<SidebarSection, SidebarContent> = {
     matches: {
@@ -192,7 +193,7 @@ function getSidebarContent(
               ),
               label: "Career Timeline",
               isActive: activeTab === "timeline",
-              onClick: () => onTabChange("timeline"),
+              onClick: () => { onTabChange("timeline"); onSectionChange?.("matches"); },
             },
           ],
         },
@@ -444,6 +445,44 @@ function getSidebarContent(
         },
       ],
     },
+
+    timeline: {
+      title: "Career Timeline",
+      sections: [
+        {
+          title: "Dream Job Planner",
+          items: [
+            {
+              icon: (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-400">
+                  <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                  <line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/>
+                </svg>
+              ),
+              label: "Career Timeline",
+              isActive: activeTab === "timeline",
+              onClick: () => { onTabChange("timeline"); onSectionChange?.("timeline"); },
+            },
+          ],
+        },
+        {
+          title: "How It Works",
+          items: [
+            {
+              icon: <Report size={15} className="text-zinc-400" />,
+              label: "Powered by workforce data",
+              hasDropdown: true,
+              children: [
+                { label: "Enter your dream role & company" },
+                { label: "See real career paths taken" },
+                { label: "Identify key stepping stones" },
+                { label: "Explore alternative routes" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   };
 
   return contentMap[section];
@@ -593,18 +632,20 @@ function DetailSidebar({
   section,
   activeTab,
   onTabChange,
+  onSectionChange,
   savedCount,
   attemptedCount,
 }: {
   section: SidebarSection;
   activeTab: "recommended" | "saved" | "attempted" | "timeline";
   onTabChange: (t: "recommended" | "saved" | "attempted" | "timeline") => void;
+  onSectionChange?: (s: SidebarSection) => void;
   savedCount: number;
   attemptedCount: number;
 }) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const content = getSidebarContent(section, { activeTab, onTabChange, savedCount, attemptedCount });
+  const content = getSidebarContent(section, { activeTab, onTabChange, onSectionChange, savedCount, attemptedCount });
 
   const toggleExpanded = (key: string) => {
     setExpandedItems((prev) => {
@@ -697,12 +738,27 @@ function IconNavRail({
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isDark, toggle } = useThemeToggle();
 
-  const navItems: NavItem[] = [
+  const navItems: (NavItem & { accent?: "emerald" | "violet" })[] = [
     { id: "matches", icon: <SearchIcon size={20} />, label: "Find Roles", href: "/prepare" },
     { id: "saved", icon: <BookmarkFilled size={20} />, label: "Saved Roles", href: "/prepare" },
     { id: "behavioral", icon: <UserIcon size={20} />, label: "Behavioral Practice", href: "/interview" },
     { id: "technical", icon: <Code size={20} />, label: "Technical Practice", href: "/interview-technical" },
     { id: "progress", icon: <ChartBar size={20} />, label: "My Progress", href: "/prepare" },
+    {
+      id: "timeline",
+      accent: "violet",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="5" r="2.2"/>
+          <circle cx="12" cy="12" r="2.2"/>
+          <circle cx="12" cy="19" r="2.2"/>
+          <line x1="12" y1="7.2" x2="12" y2="9.8"/>
+          <line x1="12" y1="14.2" x2="12" y2="16.8"/>
+        </svg>
+      ),
+      label: "Career Timeline",
+      href: "/prepare",
+    },
   ];
 
   // GPU-only label animation — opacity + translateX, no maxWidth/width
@@ -761,19 +817,18 @@ function IconNavRail({
         <div className="flex flex-col gap-0.5 w-full flex-1 mt-1">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
+            const isViolet = item.accent === "violet";
+            const activeTextClass = isActive ? (isViolet ? "text-violet-400" : "text-emerald-400") : "hover:bg-white/10 text-white/80 hover:text-white";
+            const activeBgClass = isActive ? (isViolet ? "bg-violet-500/20" : "bg-emerald-500/20") : "";
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => onSectionChange(item.id as SidebarSection)}
-                className={`${ROW} w-full transition-colors duration-300 ${
-                  isActive
-                    ? "text-emerald-400"
-                    : "hover:bg-white/10 text-white/80 hover:text-white"
-                }`}
+                className={`${ROW} w-full transition-colors duration-300 ${activeTextClass}`}
               >
                 <span className={`${ICON_SLOT}${isActive ? " nav-icon-active" : ""}`}>
-                  <span className={`nav-icon-shell flex items-center justify-center w-9 h-9 rounded-full transition-[background-color] duration-300${isActive ? " bg-emerald-500/20" : ""}`}>
+                  <span className={`nav-icon-shell flex items-center justify-center w-9 h-9 rounded-full transition-[background-color] duration-300 ${activeBgClass}`}>
                     {item.icon}
                   </span>
                 </span>
@@ -884,6 +939,7 @@ export function NextRoundSidebar({
   const defaultSectionForTab = (t: "recommended" | "saved" | "attempted" | "timeline"): SidebarSection => {
     if (t === "saved") return "saved";
     if (t === "attempted") return "progress";
+    if (t === "timeline") return "timeline";
     return "matches";
   };
 
@@ -895,6 +951,7 @@ export function NextRoundSidebar({
     // Sync tab when switching sections
     if (section === "saved") onTabChange("saved");
     else if (section === "progress") onTabChange("attempted");
+    else if (section === "timeline") onTabChange("timeline");
     else if (section === "matches" || section === "history") onTabChange("recommended");
   };
 
