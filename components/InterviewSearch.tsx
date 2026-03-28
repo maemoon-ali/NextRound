@@ -123,8 +123,8 @@ function BehavioralIcon({ color }: { color: string }) {
   return (
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      <line x1="9" y1="10" x2="15" y2="10"/>
-      <line x1="9" y1="13" x2="13" y2="13"/>
+      <line x1="8" y1="8.5" x2="16" y2="8.5"/>
+      <line x1="8" y1="11.5" x2="13" y2="11.5"/>
     </svg>
   );
 }

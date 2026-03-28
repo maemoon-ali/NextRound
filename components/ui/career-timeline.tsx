@@ -377,7 +377,7 @@ function TodayDivRow({ cy }: { cy: number }) {
       borderTop: "1px dashed rgba(255,255,255,0.10)",
     }}>
       <div style={{
-        position: "absolute", left: SPINE_X + 60 - 4, top: -4,
+        position: "absolute", left: SPINE_X + 60 - 4.5, top: -4.5,
         width: 9, height: 9, borderRadius: "50%",
         background: "rgba(255,255,255,0.60)",
         boxShadow: "0 0 0 3px rgba(255,255,255,0.08), 0 0 10px rgba(255,255,255,0.40)",
@@ -1252,7 +1252,7 @@ export function CareerTimeline({ steps, personName, loading }: CareerTimelinePro
               const { step, side } = item;
               const isPred = !!step.isPrediction;
               const accent = step.isTarget ? TARGET_COLOR : step.isCurrent ? "#fbbf24" : step.isPrediction ? "#a78bfa" : TYPE[step.companyType].color;
-              const sz     = step.isTarget ? 18 : step.isCurrent ? 15 : 11;
+              const sz     = step.isTarget ? 22 : step.isCurrent ? 17 : 13;
               const dotX   = SPINE_X + SPINE_W / 2;
               const cardX  = side === "right"
                 ? SPINE_X + SPINE_W + ARM

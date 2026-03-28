@@ -1156,9 +1156,8 @@ function PrepareContent() {
 
                 {/* ── SETTINGS ──────────────────────────────────────────────── */}
                 {activeSection === "settings" && tab !== "saved" && tab !== "attempted" && tab !== "timeline" && (
-                  <div className="relative rounded-xl overflow-hidden backdrop-blur-xl bg-white/[0.04] border border-white/[0.08] p-8 text-center">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                    <p className="text-sm text-white/40">Settings coming soon.</p>
+                  <div className="rounded-xl border border-white/[0.06] p-8 text-center">
+                    <p className="text-sm text-white/30">Settings coming soon.</p>
                   </div>
                 )}
 
