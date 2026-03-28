@@ -472,7 +472,7 @@ function PrepareContent() {
   const [tlError,        setTlError]        = useState<string | null>(null);
 
   async function generateTimeline() {
-    if (!tlLinkedinUrl.trim()) return;
+    if (!tlLinkedinUrl.trim() || !tlDreamRole.trim()) return;
     setTlLoading(true);
     setTlError(null);
     setTlSteps(null);
@@ -481,7 +481,7 @@ function PrepareContent() {
       const res = await fetch("/api/career-timeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim(), dreamRole: tlDreamRole.trim() || undefined }),
+        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim(), dreamRole: tlDreamRole.trim() }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "Failed to generate timeline");
@@ -1006,7 +1006,7 @@ function PrepareContent() {
                             marginTop: 10, fontSize: 15.5, fontWeight: 400,
                             color: "rgba(255,255,255,0.38)", lineHeight: 1.5,
                           }}>
-                            Find your career pathway with{" "}
+                            Find your dream career pathway with{" "}
                             <span style={{
                               fontFamily: "var(--font-sora), sans-serif",
                               fontWeight: 300,
@@ -1081,15 +1081,15 @@ function PrepareContent() {
                           <button
                             type="button"
                             onClick={generateTimeline}
-                            disabled={!tlLinkedinUrl.trim()}
+                            disabled={!tlLinkedinUrl.trim() || !tlDreamRole.trim()}
                             style={{
                               width: 40, height: 40, borderRadius: "50%", flexShrink: 0, position: "relative", zIndex: 3,
-                              background: tlLinkedinUrl.trim() ? "rgba(167,139,250,0.22)" : "rgba(255,255,255,0.05)",
-                              border: `1px solid ${tlLinkedinUrl.trim() ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
+                              background: (tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "rgba(167,139,250,0.22)" : "rgba(255,255,255,0.05)",
+                              border: `1px solid ${(tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              color: tlLinkedinUrl.trim() ? "#a78bfa" : "rgba(255,255,255,0.25)",
+                              color: (tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "#a78bfa" : "rgba(255,255,255,0.25)",
                               transition: "all 0.2s ease",
-                              cursor: tlLinkedinUrl.trim() ? "pointer" : "default",
+                              cursor: (tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "pointer" : "default",
                             }}
                           >
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1136,7 +1136,7 @@ function PrepareContent() {
                             value={tlDreamRole}
                             onChange={e => setTlDreamRole(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && generateTimeline()}
-                            placeholder="Dream job title  (optional)"
+                            placeholder="Dream job title  (e.g. Staff Engineer)"
                             style={{
                               flex: 1,
                               background: "none",
