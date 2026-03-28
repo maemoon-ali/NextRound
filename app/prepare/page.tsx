@@ -463,33 +463,30 @@ function PrepareContent() {
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
 
   // ── Career Timeline state ─────────────────────────────────────────────────
-  const [tlDreamRole,    setTlDreamRole]    = useState("");
-  const [tlDreamCompany, setTlDreamCompany] = useState("");
+  const [tlLinkedinUrl,  setTlLinkedinUrl]  = useState("");
   const [tlSteps,        setTlSteps]        = useState<TimelineStep[] | null>(null);
+  const [tlPersonName,   setTlPersonName]   = useState<string | undefined>(undefined);
   const [tlLoading,      setTlLoading]      = useState(false);
   const [tlError,        setTlError]        = useState<string | null>(null);
-  const [tlTotal,        setTlTotal]        = useState<number | null>(null);
 
   async function generateTimeline() {
-    if (!tlDreamRole.trim() || !tlDreamCompany.trim()) return;
+    if (!tlLinkedinUrl.trim()) return;
     setTlLoading(true);
     setTlError(null);
     setTlSteps(null);
+    setTlPersonName(undefined);
     try {
       const res = await fetch("/api/career-timeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dreamRole: tlDreamRole.trim(),
-          dreamCompany: tlDreamCompany.trim(),
-        }),
+        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim() }),
       });
-      if (!res.ok) throw new Error("Failed to generate timeline");
       const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Failed to generate timeline");
       setTlSteps(d.steps);
-      setTlTotal(d.totalProfessionals ?? null);
-    } catch (e) {
-      setTlError("Could not generate timeline. Check your inputs and try again.");
+      setTlPersonName(d.personName);
+    } catch (e: any) {
+      setTlError(e?.message ?? "Could not generate timeline. Check your LinkedIn URL and try again.");
     } finally {
       setTlLoading(false);
     }
@@ -580,7 +577,7 @@ function PrepareContent() {
   // Show results panel when there's data, OR when on saved/progress/settings sections
   // (those views show their content directly without needing data to have been generated first)
   const isDataSection = activeSection === "saved" || activeSection === "progress" || activeSection === "settings";
-  const showResultsPanel = isDataSection || tab === "timeline" || (matches?.length ?? 0) > 0 || savedList.length > 0 || attemptedList.length > 0;
+  const showResultsPanel = isDataSection || tab === "timeline" || activeSection === "matches" || (matches?.length ?? 0) > 0 || savedList.length > 0 || attemptedList.length > 0;
 
   return (
     <div
@@ -964,53 +961,41 @@ function PrepareContent() {
                       <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--pg-text)" }}>Career Timeline</h2>
                     </div>
                     <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>
-                      Enter your dream role and we'll map the real career path people took to get there — built from live workforce data.
+                      Paste your LinkedIn URL to visualise your career path and see predicted next moves — powered by live workforce data.
                     </p>
 
                     {/* Input card */}
-                    <div className="relative rounded-xl overflow-hidden border border-white/[0.09] bg-white/[0.03] p-5 space-y-4">
+                    <div className="relative rounded-xl overflow-hidden border border-white/[0.09] bg-white/[0.03] p-5 space-y-3">
                       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-white/45 mb-1.5 uppercase tracking-wide">Dream Role</label>
-                          <input
-                            type="text"
-                            value={tlDreamRole}
-                            onChange={e => setTlDreamRole(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && generateTimeline()}
-                            placeholder="e.g. Staff Engineer"
-                            className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/[0.06] border border-white/10 focus:outline-none focus:border-violet-400/50 placeholder:text-white/20 transition-colors"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-white/45 mb-1.5 uppercase tracking-wide">Dream Company</label>
-                          <input
-                            type="text"
-                            value={tlDreamCompany}
-                            onChange={e => setTlDreamCompany(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && generateTimeline()}
-                            placeholder="e.g. Google"
-                            className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/[0.06] border border-white/10 focus:outline-none focus:border-violet-400/50 placeholder:text-white/20 transition-colors"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-white/45 mb-1.5 uppercase tracking-wide">LinkedIn Profile URL</label>
+                        <input
+                          type="url"
+                          value={tlLinkedinUrl}
+                          onChange={e => setTlLinkedinUrl(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && generateTimeline()}
+                          placeholder="https://linkedin.com/in/your-name"
+                          className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/[0.06] border border-white/10 focus:outline-none focus:border-violet-400/50 placeholder:text-white/20 transition-colors"
+                        />
                       </div>
                       <button
                         type="button"
                         onClick={generateTimeline}
-                        disabled={tlLoading || !tlDreamRole.trim() || !tlDreamCompany.trim()}
+                        disabled={tlLoading || !tlLinkedinUrl.trim()}
                         className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white bg-violet-500/20 border border-violet-400/30 hover:bg-violet-500/30 hover:border-violet-400/50 disabled:opacity-40 disabled:pointer-events-none transition-all duration-150"
                       >
                         {tlLoading ? (
                           <>
                             <span className="size-3.5 rounded-full border-2 border-violet-400/40 border-t-violet-300 animate-spin" />
-                            Generating…
+                            Building timeline…
                           </>
                         ) : (
                           <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                              <line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/>
                             </svg>
-                            Generate My Path
+                            Generate Timeline
                           </>
                         )}
                       </button>
@@ -1018,27 +1003,16 @@ function PrepareContent() {
 
                     {/* Error */}
                     {tlError && (
-                      <p className="text-sm text-amber-400 px-1">{tlError}</p>
+                      <p className="text-sm text-amber-400/80 px-1">{tlError}</p>
                     )}
 
                     {/* Timeline */}
                     {(tlSteps || tlLoading) && (
-                      <div className="relative rounded-xl overflow-hidden border border-white/[0.07] bg-white/[0.02] p-6">
+                      <div className="relative rounded-xl overflow-hidden border border-white/[0.07] bg-white/[0.015] px-6 py-7">
                         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/20 to-transparent" />
-
-                        {/* Stats row */}
-                        {tlTotal != null && !tlLoading && (
-                          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-white/[0.06]">
-                            <span className="text-xs font-semibold text-violet-300/70 uppercase tracking-widest">
-                              Based on {tlTotal.toLocaleString()} real professionals
-                            </span>
-                          </div>
-                        )}
-
                         <CareerTimeline
-                          dreamRole={tlDreamRole}
-                          dreamCompany={tlDreamCompany}
                           steps={tlSteps ?? []}
+                          personName={tlPersonName}
                           loading={tlLoading}
                         />
                       </div>
@@ -1046,15 +1020,20 @@ function PrepareContent() {
 
                     {/* Empty state */}
                     {!tlSteps && !tlLoading && !tlError && (
-                      <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-10 text-center">
+                      <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.015] p-10 text-center">
                         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/15 to-transparent" />
-                        <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-400/20 flex items-center justify-center mx-auto mb-3">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,0.7)" strokeWidth="2" strokeLinecap="round">
-                            <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
-                            <line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/>
-                          </svg>
+                        <div className="flex flex-col items-center gap-3">
+                          {/* Mini preview spine */}
+                          <div className="flex flex-col items-center gap-0" style={{ opacity: 0.25 }}>
+                            {[1,2,3].map((_, i) => (
+                              <React.Fragment key={i}>
+                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa" }} />
+                                {i < 2 && <div style={{ width: 1.5, height: 16, background: "rgba(167,139,250,0.4)" }} />}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                          <p className="text-sm font-medium text-white/28">Paste your LinkedIn URL to see your career story</p>
                         </div>
-                        <p className="text-sm font-medium text-white/30">Enter a role and company to generate your career path</p>
                       </div>
                     )}
                   </div>

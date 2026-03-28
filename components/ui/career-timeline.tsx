@@ -1,233 +1,181 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface TimelineStep {
   id: string;
-  year: string;             // e.g. "Year 1–2"
-  title: string;            // role title
-  company: string;          // company or company type
+  startYear: string;           // "2019"
+  endYear?: string;            // "2022" | "Present"
+  title: string;
+  company: string;
   companyType: "big-tech" | "startup" | "mid-market" | "any";
-  duration: string;         // e.g. "18–24 months"
-  why: string;              // one-sentence rationale
-  isTarget?: boolean;       // marks the dream job node
-  isCurrent?: boolean;      // marks the user's current position
-  alternatives?: {          // zoom-in branching paths
-    title: string;
-    company: string;
-    why: string;
-  }[];
-  probability?: number;     // % of people who took this path
+  duration?: string;           // "2 yrs 3 mo"
+  isCurrent?: boolean;
+  isPrediction?: boolean;
+  predictionBasis?: string;
 }
 
 interface CareerTimelineProps {
-  dreamRole: string;
-  dreamCompany: string;
-  currentRole?: string;
   steps: TimelineStep[];
+  personName?: string;
   loading?: boolean;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Colors ────────────────────────────────────────────────────────────────────
 
-const COMPANY_TYPE_COLOR: Record<TimelineStep["companyType"], { ring: string; dot: string; tag: string; tagText: string }> = {
-  "big-tech":   { ring: "rgba(99,102,241,0.35)",  dot: "#818cf8", tag: "bg-indigo-500/10 border-indigo-500/25 text-indigo-300",  tagText: "Big Tech"    },
-  "startup":    { ring: "rgba(249,115,22,0.30)",  dot: "#fb923c", tag: "bg-orange-500/10 border-orange-500/25 text-orange-300",  tagText: "Startup"     },
-  "mid-market": { ring: "rgba(14,165,233,0.30)",  dot: "#38bdf8", tag: "bg-sky-500/10    border-sky-500/25    text-sky-300",     tagText: "Mid-Market"  },
-  "any":        { ring: "rgba(52,211,153,0.30)",  dot: "#34d399", tag: "bg-emerald-500/10 border-emerald-500/25 text-emerald-300", tagText: "Any"        },
+const TYPE: Record<TimelineStep["companyType"], { color: string; glow: string; label: string }> = {
+  "big-tech":   { color: "#818cf8", glow: "rgba(99,102,241,0.5)",  label: "Big Tech"   },
+  "startup":    { color: "#fb923c", glow: "rgba(249,115,22,0.5)",  label: "Startup"    },
+  "mid-market": { color: "#38bdf8", glow: "rgba(14,165,233,0.5)",  label: "Mid-Market" },
+  "any":        { color: "#a78bfa", glow: "rgba(167,139,250,0.5)", label: "Other"      },
 };
+
+const YEAR_W  = 44;   // year label column
+const SPINE_W = 24;   // spine column (dot lives here, centered at 12px from left)
+const ARM_W   = 14;   // horizontal arm from dot to title
 
 // ── Step node ─────────────────────────────────────────────────────────────────
 
-function StepNode({ step, index, expanded, onToggle }: {
-  step: TimelineStep;
-  index: number;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const colors = COMPANY_TYPE_COLOR[step.companyType];
-  const isSpecial = step.isTarget || step.isCurrent;
+function StepNode({ step, isLast }: { step: TimelineStep; isLast: boolean }) {
+  const c      = TYPE[step.companyType];
+  const isPred = !!step.isPrediction;
+  const dotSz  = step.isCurrent ? 13 : 9;
 
   return (
-    <div className="relative flex gap-5 group">
-      {/* Dot + connector */}
-      <div className="flex flex-col items-center" style={{ minWidth: 28 }}>
+    <div style={{ display: "flex", alignItems: "stretch" }}>
+
+      {/* ── Year label ── */}
+      <div style={{
+        width: YEAR_W, flexShrink: 0,
+        paddingRight: 10, paddingTop: 4,
+        textAlign: "right",
+      }}>
+        <span style={{
+          fontSize: 11, lineHeight: "18px", fontWeight: 600,
+          fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em",
+          color: isPred
+            ? "rgba(255,255,255,0.16)"
+            : step.isCurrent
+            ? "rgba(255,255,255,0.52)"
+            : "rgba(255,255,255,0.24)",
+        }}>
+          {step.startYear}
+        </span>
+      </div>
+
+      {/* ── Spine: dot + connecting line ── */}
+      <div style={{ width: SPINE_W, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
         {/* Dot */}
-        <div
-          style={{
-            width: step.isTarget ? 22 : step.isCurrent ? 18 : 14,
-            height: step.isTarget ? 22 : step.isCurrent ? 18 : 14,
-            borderRadius: "50%",
-            background: step.isTarget
-              ? "linear-gradient(135deg, #34d399, #059669)"
-              : step.isCurrent
-              ? "rgba(255,255,255,0.15)"
-              : colors.dot,
-            boxShadow: step.isTarget
-              ? "0 0 0 5px rgba(52,211,153,0.15), 0 0 20px rgba(52,211,153,0.35)"
-              : step.isCurrent
-              ? "0 0 0 3px rgba(255,255,255,0.08)"
-              : `0 0 0 3px ${colors.ring}`,
-            border: step.isCurrent ? "2px solid rgba(255,255,255,0.25)" : "none",
-            flexShrink: 0,
-            transition: "box-shadow 0.2s ease",
-          }}
-        />
-        {/* Line below */}
-        {!step.isTarget && (
+        <div style={{
+          width: dotSz, height: dotSz, borderRadius: "50%",
+          flexShrink: 0, marginTop: 4,
+          background:  isPred ? "transparent" : c.color,
+          border:      isPred ? `1.5px dashed ${c.color}` : "none",
+          boxShadow:   isPred ? "none" : step.isCurrent
+            ? `0 0 0 3.5px ${c.glow.replace("0.5","0.18")}, 0 0 18px ${c.glow}`
+            : `0 0 0 3px   ${c.glow.replace("0.5","0.13")}`,
+          position: "relative", zIndex: 1,
+        }} />
+
+        {/* Spine line below dot */}
+        {!isLast && (
           <div style={{
-            width: 1.5,
-            flex: 1,
-            minHeight: 40,
-            background: "linear-gradient(to bottom, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)",
-            marginTop: 6,
+            flex: 1, marginTop: 4, minHeight: 20,
+            width:       isPred ? 0 : 1.5,
+            borderLeft:  isPred ? "1.5px dashed rgba(255,255,255,0.07)" : "none",
+            background:  isPred ? "none" : "linear-gradient(to bottom,rgba(255,255,255,0.10),rgba(255,255,255,0.02))",
           }} />
         )}
       </div>
 
-      {/* Card */}
-      <div style={{ flex: 1, paddingBottom: step.isTarget ? 0 : 20 }}>
-        {/* Year label */}
-        {!step.isCurrent && (
-          <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", letterSpacing: "0.06em", marginBottom: 8, textTransform: "uppercase" }}>
-            {step.year}
-          </p>
-        )}
+      {/* ── Arm + content ── */}
+      <div style={{ flex: 1, paddingBottom: isLast ? 0 : 22 }}>
 
-        <div
-          style={{
-            background: step.isTarget
-              ? "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(5,150,105,0.06))"
-              : step.isCurrent
-              ? "rgba(255,255,255,0.04)"
-              : "rgba(255,255,255,0.03)",
-            border: step.isTarget
-              ? "1px solid rgba(52,211,153,0.25)"
-              : step.isCurrent
-              ? "1px solid rgba(255,255,255,0.10)"
-              : "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 14,
-            padding: "14px 16px",
-            transition: "border-color 0.2s ease, background 0.2s ease",
-          }}
-        >
-          {/* Header row */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <p style={{
-                  margin: 0, fontSize: 14, fontWeight: 700,
-                  color: step.isTarget ? "#34d399" : step.isCurrent ? "rgba(255,255,255,0.55)" : "#fff",
-                  letterSpacing: "-0.01em",
-                }}>
-                  {step.title}
-                </p>
-                {step.isTarget && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
-                    background: "rgba(52,211,153,0.15)", color: "#34d399",
-                    border: "1px solid rgba(52,211,153,0.3)", letterSpacing: "0.05em", textTransform: "uppercase",
-                  }}>
-                    Dream Role
-                  </span>
-                )}
-                {step.isCurrent && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 99,
-                    background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)",
-                    border: "1px solid rgba(255,255,255,0.12)", letterSpacing: "0.04em", textTransform: "uppercase",
-                  }}>
-                    You are here
-                  </span>
-                )}
-              </div>
-              <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.40)", fontWeight: 500 }}>
-                {step.company}
-              </p>
-            </div>
+        {/* Title row */}
+        <div style={{ display: "flex", alignItems: "center", marginTop: 4 }}>
+          {/* Arm */}
+          <div style={{
+            width: ARM_W, height: 1, flexShrink: 0,
+            background: isPred
+              ? "none"
+              : `linear-gradient(to right,${c.color}70,${c.color}20)`,
+            borderTop: isPred ? "1px dashed rgba(255,255,255,0.11)" : "none",
+          }} />
 
-            {/* Right: tags */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-              {!step.isCurrent && !step.isTarget && (
-                <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 99 }}
-                  className={`border ${colors.tag}`}>
-                  {colors.tagText}
-                </span>
-              )}
-              {step.duration && !step.isCurrent && (
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", fontWeight: 500 }}>
-                  {step.duration}
-                </span>
-              )}
-              {step.probability != null && !step.isCurrent && (
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", fontWeight: 500 }}>
-                  {step.probability}% take this path
-                </span>
-              )}
-            </div>
+          {/* Role title */}
+          <span style={{
+            marginLeft: 10, fontSize: 14, fontWeight: 700, lineHeight: "20px",
+            letterSpacing: "-0.01em",
+            color: isPred
+              ? "rgba(255,255,255,0.34)"
+              : step.isCurrent
+              ? "#ffffff"
+              : "rgba(255,255,255,0.84)",
+          }}>
+            {step.title}
+          </span>
+
+          {/* "Current" badge */}
+          {step.isCurrent && (
+            <span style={{
+              marginLeft: 8, fontSize: 9, fontWeight: 700,
+              padding: "2px 7px", borderRadius: 99, flexShrink: 0,
+              background: "rgba(255,255,255,0.07)",
+              color: "rgba(255,255,255,0.42)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              letterSpacing: "0.07em", textTransform: "uppercase",
+            }}>
+              Current
+            </span>
+          )}
+
+          {/* "Predicted" badge */}
+          {isPred && (
+            <span style={{
+              marginLeft: 8, fontSize: 9, fontWeight: 700,
+              padding: "2px 7px", borderRadius: 99, flexShrink: 0,
+              background: "rgba(167,139,250,0.07)",
+              color: "rgba(167,139,250,0.44)",
+              border: "1px dashed rgba(167,139,250,0.22)",
+              letterSpacing: "0.07em", textTransform: "uppercase",
+            }}>
+              Predicted
+            </span>
+          )}
+        </div>
+
+        {/* Company + meta */}
+        <div style={{ marginLeft: ARM_W + 10, marginTop: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.33)", fontWeight: 500 }}>
+              {step.company}
+            </span>
+            <span style={{
+              fontSize: 9, fontWeight: 700,
+              padding: "1.5px 6px", borderRadius: 99,
+              letterSpacing: "0.05em", textTransform: "uppercase",
+              background: `${c.color}12`,
+              color: isPred ? `${c.color}65` : c.color,
+              border: `1px solid ${c.color}${isPred ? "26" : "38"}`,
+            }}>
+              {c.label}
+            </span>
           </div>
 
-          {/* Why */}
-          {step.why && !step.isCurrent && (
-            <p style={{ margin: "10px 0 0", fontSize: 12, color: "rgba(255,255,255,0.40)", lineHeight: 1.6 }}>
-              {step.why}
+          {(step.duration || (step.endYear && step.endYear !== step.startYear)) && (
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: isPred ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.22)" }}>
+              {step.startYear}
+              {step.endYear && step.endYear !== step.startYear ? ` – ${step.endYear}` : ""}
+              {step.duration ? ` · ${step.duration}` : ""}
             </p>
           )}
 
-          {/* Alternatives toggle */}
-          {step.alternatives && step.alternatives.length > 0 && (
-            <button
-              type="button"
-              onClick={onToggle}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, marginTop: 12,
-                background: "none", border: "none", padding: 0, cursor: "pointer",
-                color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 600,
-                letterSpacing: "0.03em",
-                transition: "color 0.15s ease",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-              {expanded ? "Hide" : "See"} {step.alternatives.length} alternative{step.alternatives.length > 1 ? "s" : ""}
-            </button>
-          )}
-
-          {/* Expanded alternatives */}
-          {expanded && step.alternatives && (
-            <div style={{
-              marginTop: 12,
-              display: "grid",
-              gridTemplateRows: "1fr",
-              opacity: 1,
-              animation: "tl-expand 0.22s ease both",
-            }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {step.alternatives.map((alt, ai) => (
-                  <div key={ai} style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 10,
-                    padding: "10px 12px",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5">
-                        <path d="M5 12h14M13 6l6 6-6 6"/>
-                      </svg>
-                      <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.70)" }}>{alt.title}</p>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.28)" }}>@ {alt.company}</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.33)", lineHeight: 1.55 }}>{alt.why}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {isPred && step.predictionBasis && (
+            <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(255,255,255,0.15)", fontStyle: "italic" }}>
+              {step.predictionBasis}
+            </p>
           )}
         </div>
       </div>
@@ -235,77 +183,111 @@ function StepNode({ step, index, expanded, onToggle }: {
   );
 }
 
-// ── Skeleton loader ───────────────────────────────────────────────────────────
+// ── Today divider ─────────────────────────────────────────────────────────────
 
-function TimelineSkeleton() {
+function TodayDivider() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      {[120, 90, 110, 80, 100].map((w, i) => (
-        <div key={i} style={{ display: "flex", gap: 20, paddingBottom: i < 4 ? 20 : 0 }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 28 }}>
-            <div style={{
-              width: i === 4 ? 22 : 14, height: i === 4 ? 22 : 14, borderRadius: "50%",
-              background: "rgba(255,255,255,0.07)", animation: "nr-skeleton-pulse 1.4s ease-in-out infinite",
-              animationDelay: `${i * 0.12}s`,
-            }} />
-            {i < 4 && <div style={{ width: 1.5, flex: 1, minHeight: 48, background: "rgba(255,255,255,0.06)", marginTop: 6 }} />}
-          </div>
-          <div style={{ flex: 1, paddingTop: 2 }}>
-            <div style={{ height: 10, width: 60, borderRadius: 6, background: "rgba(255,255,255,0.06)", marginBottom: 10,
-              animation: "nr-skeleton-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.12}s` }} />
-            <div style={{ borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)", padding: "14px 16px",
-              background: "rgba(255,255,255,0.025)" }}>
-              <div style={{ height: 14, width: `${w}px`, borderRadius: 6, background: "rgba(255,255,255,0.07)", marginBottom: 8,
-                animation: "nr-skeleton-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
-              <div style={{ height: 10, width: 80, borderRadius: 6, background: "rgba(255,255,255,0.05)",
-                animation: "nr-skeleton-pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.18}s` }} />
-            </div>
-          </div>
-        </div>
-      ))}
-      <style>{`
-        @keyframes nr-skeleton-pulse {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 1; }
-        }
-        @keyframes tl-expand {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+    <div style={{ display: "flex", alignItems: "center", margin: "2px 0 4px" }}>
+      {/* Year column spacer */}
+      <div style={{ width: YEAR_W, flexShrink: 0 }} />
+
+      {/* White dot on spine */}
+      <div style={{ width: SPINE_W, flexShrink: 0, display: "flex", justifyContent: "center" }}>
+        <div style={{
+          width: 8, height: 8, borderRadius: "50%", position: "relative", zIndex: 1,
+          background: "rgba(255,255,255,0.45)",
+          boxShadow: "0 0 0 3px rgba(255,255,255,0.07), 0 0 10px rgba(255,255,255,0.22)",
+        }} />
+      </div>
+
+      {/* "Today" label with lines */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, paddingLeft: ARM_W + 10 }}>
+        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+        <span style={{
+          fontSize: 10, fontWeight: 700, flexShrink: 0,
+          color: "rgba(255,255,255,0.24)", letterSpacing: "0.10em", textTransform: "uppercase",
+        }}>
+          Today
+        </span>
+        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.04)" }} />
+      </div>
     </div>
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
-export function CareerTimeline({ dreamRole, dreamCompany, currentRole, steps, loading }: CareerTimelineProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+function TimelineSkeleton() {
+  const widths = [130, 160, 100, 148];
+  return (
+    <div>
+      <style>{`
+        @keyframes nr-sk { 0%,100%{opacity:.35} 50%{opacity:.85} }
+      `}</style>
+      {widths.map((w, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "stretch", marginBottom: i < widths.length - 1 ? 22 : 0 }}>
+          {/* Year */}
+          <div style={{ width: YEAR_W, flexShrink: 0, paddingRight: 10, paddingTop: 4 }}>
+            <div style={{ width: 28, height: 11, borderRadius: 4, marginLeft: "auto",
+              background: "rgba(255,255,255,0.06)", animation: `nr-sk 1.4s ease-in-out ${i*0.1}s infinite` }} />
+          </div>
+          {/* Spine */}
+          <div style={{ width: SPINE_W, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: 9, height: 9, borderRadius: "50%", marginTop: 4, flexShrink: 0,
+              background: "rgba(255,255,255,0.08)", animation: `nr-sk 1.4s ease-in-out ${i*0.12}s infinite` }} />
+            {i < widths.length - 1 && (
+              <div style={{ flex: 1, width: 1.5, minHeight: 20, marginTop: 4, background: "rgba(255,255,255,0.04)" }} />
+            )}
+          </div>
+          {/* Content */}
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", marginTop: 4 }}>
+              <div style={{ width: ARM_W, height: 1, background: "rgba(255,255,255,0.04)", flexShrink: 0 }} />
+              <div style={{ marginLeft: 10, height: 14, width: w, borderRadius: 4,
+                background: "rgba(255,255,255,0.08)", animation: `nr-sk 1.4s ease-in-out ${i*0.14}s infinite` }} />
+            </div>
+            <div style={{ marginLeft: ARM_W + 10, marginTop: 6 }}>
+              <div style={{ height: 11, width: 80, borderRadius: 4,
+                background: "rgba(255,255,255,0.05)", animation: `nr-sk 1.4s ease-in-out ${i*0.16}s infinite` }} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-  const toggle = useCallback((id: string) => {
-    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
-  }, []);
+// ── Main export ───────────────────────────────────────────────────────────────
 
+export function CareerTimeline({ steps, personName, loading }: CareerTimelineProps) {
   if (loading) return <TimelineSkeleton />;
+  if (!steps.length) return null;
+
+  const realSteps = steps.filter(s => !s.isPrediction);
+  const predSteps = steps.filter(s =>  s.isPrediction);
+  const hasPreds  = predSteps.length > 0;
 
   return (
-    <div style={{ position: "relative" }}>
-      <style>{`
-        @keyframes tl-expand {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+    <div>
+      {personName && (
+        <p style={{ marginBottom: 22, fontSize: 11, fontWeight: 600,
+          color: "rgba(255,255,255,0.22)", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+          {personName}
+        </p>
+      )}
 
-      {steps.map((step, i) => (
-        <StepNode
-          key={step.id}
-          step={step}
-          index={i}
-          expanded={!!expanded[step.id]}
-          onToggle={() => toggle(step.id)}
-        />
+      {realSteps.map((step, i) => (
+        <StepNode key={step.id} step={step} isLast={!hasPreds && i === realSteps.length - 1} />
       ))}
+
+      {hasPreds && (
+        <>
+          <TodayDivider />
+          {predSteps.map((step, i) => (
+            <StepNode key={step.id} step={step} isLast={i === predSteps.length - 1} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
