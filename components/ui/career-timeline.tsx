@@ -14,6 +14,7 @@ export interface TimelineStep {
   duration?: string;           // "2 yrs 3 mo"
   isCurrent?: boolean;
   isPrediction?: boolean;
+  isTarget?: boolean;
   predictionBasis?: string;
 }
 
@@ -39,9 +40,10 @@ const ARM_W   = 14;   // horizontal arm from dot to title
 // ── Step node ─────────────────────────────────────────────────────────────────
 
 function StepNode({ step, isLast }: { step: TimelineStep; isLast: boolean }) {
-  const c      = TYPE[step.companyType];
-  const isPred = !!step.isPrediction;
-  const dotSz  = step.isCurrent ? 13 : 9;
+  const c        = TYPE[step.companyType];
+  const isPred   = !!step.isPrediction;
+  const isTarget = !!step.isTarget;
+  const dotSz    = isTarget ? 15 : step.isCurrent ? 13 : 9;
 
   return (
     <div style={{ display: "flex", alignItems: "stretch" }}>
@@ -71,9 +73,11 @@ function StepNode({ step, isLast }: { step: TimelineStep; isLast: boolean }) {
         <div style={{
           width: dotSz, height: dotSz, borderRadius: "50%",
           flexShrink: 0, marginTop: 4,
-          background:  isPred ? "transparent" : c.color,
+          background:  isPred ? "transparent" : isTarget ? "linear-gradient(135deg,#34d399,#059669)" : c.color,
           border:      isPred ? `1.5px dashed ${c.color}` : "none",
-          boxShadow:   isPred ? "none" : step.isCurrent
+          boxShadow:   isPred ? "none" : isTarget
+            ? "0 0 0 4px rgba(52,211,153,0.18), 0 0 20px rgba(52,211,153,0.5)"
+            : step.isCurrent
             ? `0 0 0 3.5px ${c.glow.replace("0.5","0.18")}, 0 0 18px ${c.glow}`
             : `0 0 0 3px   ${c.glow.replace("0.5","0.13")}`,
           position: "relative", zIndex: 1,
@@ -108,11 +112,7 @@ function StepNode({ step, isLast }: { step: TimelineStep; isLast: boolean }) {
           <span style={{
             marginLeft: 10, fontSize: 14, fontWeight: 700, lineHeight: "20px",
             letterSpacing: "-0.01em",
-            color: isPred
-              ? "rgba(255,255,255,0.34)"
-              : step.isCurrent
-              ? "#ffffff"
-              : "rgba(255,255,255,0.84)",
+            color: isPred ? "rgba(255,255,255,0.34)" : isTarget ? "#34d399" : step.isCurrent ? "#ffffff" : "rgba(255,255,255,0.84)",
           }}>
             {step.title}
           </span>
@@ -142,6 +142,20 @@ function StepNode({ step, isLast }: { step: TimelineStep; isLast: boolean }) {
               letterSpacing: "0.07em", textTransform: "uppercase",
             }}>
               Predicted
+            </span>
+          )}
+
+          {/* "Dream Role" badge */}
+          {isTarget && (
+            <span style={{
+              marginLeft: 8, fontSize: 9, fontWeight: 700,
+              padding: "2px 7px", borderRadius: 99, flexShrink: 0,
+              background: "rgba(52,211,153,0.10)",
+              color: "#34d399",
+              border: "1px solid rgba(52,211,153,0.30)",
+              letterSpacing: "0.07em", textTransform: "uppercase",
+            }}>
+              Dream Role
             </span>
           )}
         </div>
@@ -263,9 +277,10 @@ export function CareerTimeline({ steps, personName, loading }: CareerTimelinePro
   if (loading) return <TimelineSkeleton />;
   if (!steps.length) return null;
 
-  const realSteps = steps.filter(s => !s.isPrediction);
-  const predSteps = steps.filter(s =>  s.isPrediction);
-  const hasPreds  = predSteps.length > 0;
+  const realSteps   = steps.filter(s => !s.isPrediction && !s.isTarget);
+  const predSteps   = steps.filter(s =>  s.isPrediction && !s.isTarget);
+  const targetStep  = steps.find(s   =>  s.isTarget) ?? null;
+  const hasPreds    = predSteps.length > 0 || !!targetStep;
 
   return (
     <div>
@@ -284,8 +299,11 @@ export function CareerTimeline({ steps, personName, loading }: CareerTimelinePro
         <>
           <TodayDivider />
           {predSteps.map((step, i) => (
-            <StepNode key={step.id} step={step} isLast={i === predSteps.length - 1} />
+            <StepNode key={step.id} step={step} isLast={!targetStep && i === predSteps.length - 1} />
           ))}
+          {targetStep && (
+            <StepNode key={targetStep.id} step={targetStep} isLast={true} />
+          )}
         </>
       )}
     </div>

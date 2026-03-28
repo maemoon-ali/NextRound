@@ -465,6 +465,7 @@ function PrepareContent() {
 
   // ── Career Timeline state ─────────────────────────────────────────────────
   const [tlLinkedinUrl,  setTlLinkedinUrl]  = useState("");
+  const [tlDreamRole,    setTlDreamRole]    = useState("");
   const [tlSteps,        setTlSteps]        = useState<TimelineStep[] | null>(null);
   const [tlPersonName,   setTlPersonName]   = useState<string | undefined>(undefined);
   const [tlLoading,      setTlLoading]      = useState(false);
@@ -480,7 +481,7 @@ function PrepareContent() {
       const res = await fetch("/api/career-timeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim() }),
+        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim(), dreamRole: tlDreamRole.trim() || undefined }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "Failed to generate timeline");
@@ -1097,6 +1098,60 @@ function PrepareContent() {
                           </button>
                         </div>
 
+                        {/* Dream role pill */}
+                        <div style={{
+                          position: "relative",
+                          display: "flex",
+                          alignItems: "center",
+                          width: "min(460px, 100%)",
+                          height: 54,
+                          borderRadius: 9999,
+                          overflow: "hidden",
+                          background: "rgba(255,255,255,0.055)",
+                          border: "1px solid rgba(255,255,255,0.13)",
+                          padding: "0 7px 0 16px",
+                          boxShadow: "0 0 0 4px rgba(52,211,153,0.04), 0 4px 24px rgba(0,0,0,0.3)",
+                          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                        }}>
+                          {/* Scan lines inside dream role pill */}
+                          <div className="animate-tl-scan" style={{
+                            position: "absolute", width: "100%", height: 8,
+                            background: "rgba(52,211,153,0.30)", left: 0, top: 0,
+                            filter: "blur(8px)", pointerEvents: "none", zIndex: 1,
+                          }} />
+                          <div className="animate-tl-scan" style={{
+                            position: "absolute", width: "100%", height: 2.5,
+                            background: "#34d399", left: 0, top: 0,
+                            opacity: 0.55, pointerEvents: "none", zIndex: 2,
+                          }} />
+
+                          {/* Star/target icon */}
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.75, position: "relative", zIndex: 3 }}>
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+
+                          {/* Input */}
+                          <input
+                            type="text"
+                            value={tlDreamRole}
+                            onChange={e => setTlDreamRole(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && generateTimeline()}
+                            placeholder="Dream job title  (optional)"
+                            style={{
+                              flex: 1,
+                              background: "none",
+                              border: "none",
+                              outline: "none",
+                              fontSize: 14,
+                              color: "#ffffff",
+                              padding: "0 12px",
+                              minWidth: 0,
+                              position: "relative",
+                              zIndex: 3,
+                            }}
+                          />
+                        </div>
+
                         {/* Error message */}
                         {tlError && (
                           <p style={{ fontSize: 13, color: "rgba(251,191,36,0.75)", textAlign: "center", maxWidth: 420 }}>
@@ -1134,7 +1189,7 @@ function PrepareContent() {
                       }}>
                         <button
                           type="button"
-                          onClick={() => { setTlSteps(null); setTlPersonName(undefined); setTlError(null); }}
+                          onClick={() => { setTlSteps(null); setTlPersonName(undefined); setTlError(null); setTlDreamRole(""); }}
                           style={{
                             display: "flex", alignItems: "center", gap: 6,
                             background: "none", border: "none", padding: "4px 0",
