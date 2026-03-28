@@ -645,6 +645,15 @@ input[type="number"].nr-number-input {
 .animate-tl-cut  { animation: tl-cut  2.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
 .animate-tl-in   { animation: tl-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* Single full-container scan — sweeps entire hero height, only during loading */
+@keyframes tl-scan-full {
+  from { top: -8px; }
+  to   { top: calc(100% + 8px); }
+}
+.animate-tl-scan-full {
+  animation: tl-scan-full 2.2s linear infinite;
+}
+
 /* ── Hold-to-save card animations ──────────────────────────────────────────── */
 @keyframes nr-bounce-in {
   0%   { transform: scale(0.3); opacity: 0; }

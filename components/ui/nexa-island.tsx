@@ -19,6 +19,31 @@ interface UserContext {
   targetCompany?: string;
 }
 
+/** Grab the readable text currently visible on the page (excluding the Nexa island itself) */
+function capturePageText(): string {
+  try {
+    // Prefer semantic content areas
+    const candidates = ["main", "article", "[role='main']", "#__next main", "body"];
+    for (const sel of candidates) {
+      const el = document.querySelector(sel);
+      if (!el || !(el instanceof HTMLElement)) continue;
+      const text = el.innerText ?? "";
+      if (text.trim().length > 80) {
+        // Strip the Nexa island's own text so it doesn't loop on itself
+        const nexaEl = document.getElementById("nexa-island-root");
+        const nexaText = nexaEl?.innerText ?? "";
+        const cleaned = text.replace(nexaText, "")
+          .replace(/[ \t]{2,}/g, " ")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim()
+          .slice(0, 4000);
+        if (cleaned.length > 80) return cleaned;
+      }
+    }
+    return "";
+  } catch { return ""; }
+}
+
 /** Read the user's job history + saved roles from storage so Nexa can personalise */
 function readUserContext(): UserContext {
   try {
@@ -297,7 +322,12 @@ export function NexaIsland({ onClose }: { onClose?: () => void }) {
       const res = await fetch("/api/nexa-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, userMessage: text, userContext: readUserContext() }),
+        body: JSON.stringify({
+          messages: history,
+          userMessage: text,
+          userContext: readUserContext(),
+          pageContext: capturePageText(),
+        }),
       });
 
       if (!res.ok) throw new Error("bad response");

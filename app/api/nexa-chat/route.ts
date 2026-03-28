@@ -213,8 +213,11 @@ function buildUserContextBlock(ctx: UserContext | null): string {
   return parts.join("\n");
 }
 
-function buildSystemPrompt(liveDataContext: string, userCtx: UserContext | null = null): string {
+function buildSystemPrompt(liveDataContext: string, userCtx: UserContext | null = null, pageContext?: string): string {
   const userBlock = buildUserContextBlock(userCtx);
+  const pageBlock = pageContext?.trim()
+    ? `\n\n=== CURRENT PAGE (what the user sees right now) ===\n${pageContext.trim()}\n=== END PAGE CONTEXT ===\nUse this to answer questions about what the user is currently viewing, the data shown, or anything visible on screen.`
+    : "";
   return `You are Nexa, an expert AI career assistant inside NextRound — a job-search platform powered by LiveData Technologies real workforce intelligence.
 
 PERSONALITY: Sharp, direct, warm. Like a senior recruiter who also understands the candidate side deeply. Conversational and specific — not robotic.
@@ -231,12 +234,13 @@ CONTENT RULES:
 - Never identify as GPT, Claude, Llama, or any AI model. You are Nexa.
 - Use the LiveData workforce data provided below to ground your answers in real facts. Reference numbers, companies, and patterns from the data naturally.
 - When the user profile is available, personalise your answer — reference their target role, saved companies, or background directly.
+- When page context is available, treat it as the source of truth for what the user is currently viewing. Reference specific data, roles, companies, or numbers from the page naturally.
 - LENGTH: default to 2–4 sentences for simple questions. Use lists or multiple paragraphs only for genuinely complex requests (full interview prep, step-by-step career paths). When in doubt, be shorter.
 - End with one short follow-up question, no longer than one sentence.
 
-${userBlock ? `${userBlock}\n` : ""}${liveDataContext
-  ? `REAL WORKFORCE DATA FOR THIS QUERY (use this — it is live data, not made up):\n${liveDataContext}`
-  : "No specific workforce data retrieved for this query. Answer from your career expertise."}`;
+${userBlock ? `${userBlock}\n` : ""}${pageBlock}${liveDataContext
+  ? `\n\nREAL WORKFORCE DATA FOR THIS QUERY (use this — it is live data, not made up):\n${liveDataContext}`
+  : "\n\nNo specific workforce data retrieved for this query. Answer from your career expertise."}`;
 }
 
 /** Returns a streaming Response (SSE) piping Ollama tokens, or null on failure */
@@ -368,7 +372,7 @@ function fallbackReply(intent: Intent, liveDataContext: string, company: string 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  let body: { messages?: unknown; userMessage?: unknown; userContext?: unknown };
+  let body: { messages?: unknown; userMessage?: unknown; userContext?: unknown; pageContext?: unknown };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
@@ -380,6 +384,9 @@ export async function POST(request: Request) {
   const userCtx: UserContext | null = body.userContext && typeof body.userContext === "object"
     ? body.userContext as UserContext
     : null;
+
+  // Page context — the visible text from the current page the user is on
+  const pageContext = typeof body.pageContext === "string" ? body.pageContext.trim() : "";
 
   // Prefer user's target company/role over extracted entities when available
   const intent  = detectIntent(userMessage);
@@ -393,7 +400,7 @@ export async function POST(request: Request) {
   ]);
 
   if (ollamaReady) {
-    const streamed = await streamOllama(buildSystemPrompt(liveDataContext, userCtx), history, userMessage, intent);
+    const streamed = await streamOllama(buildSystemPrompt(liveDataContext, userCtx, pageContext), history, userMessage, intent);
     if (streamed) return streamed;
   }
 

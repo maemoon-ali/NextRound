@@ -47,11 +47,11 @@ function calcDuration(start: string, end: string | null): string {
 // ── Route ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  let body: { linkedinUrl?: string; dreamRole?: string };
+  let body: { linkedinUrl?: string; dreamRole?: string; dreamCompany?: string };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { linkedinUrl, dreamRole } = body;
+  const { linkedinUrl, dreamRole, dreamCompany } = body;
   if (!linkedinUrl?.trim()) {
     return NextResponse.json({ error: "linkedinUrl is required" }, { status: 400 });
   }
@@ -119,80 +119,199 @@ export async function POST(req: NextRequest) {
   if (currentJob?.title) {
     if (dreamRole?.trim()) {
       // ── Path to dream role ────────────────────────────────────────────────
-      const dreamKeyword = dreamRole.trim().toLowerCase().split(" ")[0];
-      const userKeyword  = currentJob.title.toLowerCase().split(" ")[0];
+      const dreamNorm  = dreamRole.trim().toLowerCase();
+      const dreamWords = dreamNorm.split(/\s+/).filter(w => w.length > 2);
+      const titleMatch = (t: string) => dreamWords.length > 1
+        ? dreamWords.every(w => t.toLowerCase().includes(w))
+        : t.toLowerCase().includes(dreamWords[0] ?? dreamNorm);
 
-      // Find people who hold/held the dream role
-      const dreamPeople = await ldSearch([{
-        operator: "and",
-        filters: [{ field: "jobs.title", type: "must", match_type: "fuzzy", string_values: [dreamRole.trim()] }],
-      }], 50);
+      // Company similarity helper
+      const companyMatch = (a: string, b: string): boolean => {
+        const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+        const na = norm(a), nb = norm(b);
+        if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+        const stop = new Set(["the","and","for","inc","llc","corp","pvt","ltd","pte","gmbh","co","of"]);
+        const sig = (s: string) => s.split(" ").filter(w => w.length > 3 && !stop.has(w));
+        const wa = sig(na), wb = sig(nb);
+        const ref = wb.length <= wa.length ? wb : wa;
+        if (ref.length === 0) return na.includes(nb.split(" ")[0] ?? nb);
+        const hits = ref.filter(w => (wb.length <= wa.length ? wa : wb).includes(w));
+        return hits.length >= Math.ceil(ref.length / 2);
+      };
 
-      // Extract intermediate roles between a user-like role and the dream role
-      const pathMap: Record<string, { count: number; company: string; companyType: TimelineStep["companyType"] }> = {};
+      // Build filters: always target the role, and add company filter if dreamCompany is given
+      const searchFilters: object[] = dreamCompany?.trim()
+        ? [{
+            operator: "and",
+            filters: [
+              { field: "jobs.title",        type: "must", match_type: "fuzzy", string_values: [dreamRole.trim()] },
+              { field: "jobs.company.name", type: "must", match_type: "fuzzy", string_values: [dreamCompany.trim()] },
+            ],
+          }]
+        : [{
+            operator: "and",
+            filters: [{ field: "jobs.title", type: "must", match_type: "fuzzy", string_values: [dreamRole.trim()] }],
+          }];
 
-      for (const dp of dreamPeople) {
+      // Find people who hold/held the dream role (at the dream company if specified)
+      let dreamPeople = await ldSearch(searchFilters, 100);
+
+      // If the company-filtered search returned too few, fall back to role-only search
+      if (dreamCompany?.trim() && dreamPeople.length < 5) {
+        const fallback = await ldSearch([{
+          operator: "and",
+          filters: [{ field: "jobs.title", type: "must", match_type: "fuzzy", string_values: [dreamRole.trim()] }],
+        }], 100);
+        dreamPeople = fallback;
+      }
+
+      // When dreamCompany is set, only study paths from people who actually held the role at that company
+      const relevantDreamPeople = dreamCompany?.trim()
+        ? dreamPeople.filter(dp =>
+            (dp.jobs ?? []).some((j: any) =>
+              titleMatch(j.title ?? "") && companyMatch(j.company?.name ?? "", dreamCompany.trim())
+            )
+          )
+        : dreamPeople;
+
+      // Use company-matched people if we have enough; otherwise use full set
+      const pathSource = relevantDreamPeople.length >= 5 ? relevantDreamPeople : dreamPeople;
+
+      // Extract roles that commonly precede the dream role.
+      // Split into two pools:
+      //   internalMap — stepping-stone was at the dream company itself (internal move)
+      //   externalMap — stepping-stone was at a different company (feeder path)
+      type PathEntry = {
+        count: number;
+        company: string;
+        companyType: TimelineStep["companyType"];
+        companyCounts: Record<string, number>;
+      };
+      const internalMap: Record<string, PathEntry> = {};
+      const externalMap: Record<string, PathEntry> = {};
+
+      for (const dp of pathSource) {
         const dpJobs: any[] = (dp.jobs ?? []).sort(
           (a: any, b: any) => new Date(a.started_at ?? 0).getTime() - new Date(b.started_at ?? 0).getTime()
         );
-        const dreamIdx = dpJobs.findIndex(j => j.title?.toLowerCase().includes(dreamKeyword));
+        const dreamIdx = dpJobs.findIndex(j => titleMatch(j.title ?? ""));
         if (dreamIdx < 1) continue;
 
-        const beforeDream = dpJobs.slice(0, dreamIdx);
-        const similarIdx  = beforeDream.findIndex(j => j.title?.toLowerCase().includes(userKeyword));
-        if (similarIdx < 0) continue;
-
-        for (const pj of dpJobs.slice(similarIdx + 1, dreamIdx)) {
+        // Record 1-2 roles that appear immediately before the dream role
+        const prevRoles = dpJobs.slice(Math.max(0, dreamIdx - 2), dreamIdx);
+        for (const pj of prevRoles) {
           const key = pj.title?.toLowerCase().trim();
-          if (!key || key.includes(dreamKeyword)) continue;
-          if (!pathMap[key]) {
-            pathMap[key] = { count: 0, company: pj.company?.name ?? "Various", companyType: classifyCompany(pj.company?.name ?? "") };
+          if (!key || titleMatch(key)) continue;
+
+          const coName = pj.company?.name ?? "";
+          const isInternal = dreamCompany?.trim()
+            ? companyMatch(coName, dreamCompany.trim())
+            : false;
+          const map = isInternal ? internalMap : externalMap;
+
+          if (!map[key]) {
+            map[key] = {
+              count: 0,
+              company: coName || "Various",
+              companyType: classifyCompany(coName),
+              companyCounts: {},
+            };
           }
-          pathMap[key].count++;
+          map[key].count++;
+          if (coName) {
+            map[key].companyCounts[coName] = (map[key].companyCounts[coName] ?? 0) + 1;
+          }
         }
       }
 
-      // Top 1-2 intermediate stepping stones
-      const topPath = Object.entries(pathMap)
+      // Pick best internal (same company) and best external (feeder) stepping stone.
+      // Result: up to 1 internal + 1 external, ensuring company diversity.
+      const bestInternal = Object.entries(internalMap)
         .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 2);
+        .slice(0, 1);
+      const bestExternal = Object.entries(externalMap)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 1);
+
+      // Assemble: show external first (broader feeder), then internal (same-company promotion)
+      // If no dreamCompany was given, just take top 2 from external
+      const topPath: [string, PathEntry][] = dreamCompany?.trim()
+        ? [...bestExternal, ...bestInternal]
+        : Object.entries(externalMap).sort((a, b) => b[1].count - a[1].count).slice(0, 2);
 
       const nowYear = new Date().getFullYear();
       let yearCursor = nowYear;
 
-      topPath.forEach(([titleKey, data], i) => {
+      if (topPath.length === 0) {
+        // No intermediate roles found — show explicit "no path" card
         yearCursor += 2;
         steps.push({
-          id: `path-${i}`,
+          id: "path-no-data",
           startYear: String(yearCursor),
-          title: titleKey.replace(/\b\w/g, c => c.toUpperCase()),
-          company: data.company,
-          companyType: data.companyType,
-          duration: "~1–3 yrs",
+          title: "No direct stepping-stone found",
+          company: `Our dataset found ${dreamPeople.length} ${dreamRole} holders but no common intermediate role for your path`,
+          companyType: "any",
+          duration: "",
           isPrediction: true,
-          predictionBasis: `${data.count} professionals took this step on the way to ${dreamRole}`,
-        });
-      });
+          predictionBasis: `Try lateral moves or upskilling toward ${dreamRole}`,
+          transitionCount: 0,
+          alternativeCompanies: [],
+        } as any);
+        yearCursor += 2;
+      } else {
+        topPath.forEach(([titleKey, data], i) => {
+          yearCursor += 2;
+          const altCompanies = Object.entries(data.companyCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name)
+            .filter(name => name !== data.company);
 
-      // Most common company for dream role holders
-      const companyCounts: Record<string, number> = {};
-      for (const dp of dreamPeople) {
+          steps.push({
+            id: `path-${i}`,
+            startYear: String(yearCursor),
+            title: titleKey.replace(/\b\w/g, c => c.toUpperCase()),
+            company: data.company,
+            companyType: data.companyType,
+            duration: "~1–3 yrs",
+            isPrediction: true,
+            predictionBasis: `${data.count} professionals took this step`,
+            transitionCount: data.count,
+            alternativeCompanies: altCompanies,
+          } as any);
+        });
+        yearCursor += 2;
+      }
+
+      // Determine company for dream role node + top companies for alt display
+      const dreamCompanyCounts: Record<string, number> = {};
+      for (const dp of pathSource) {
         const curr = (dp.jobs ?? []).find((j: any) => !j.ended_at);
         const name = curr?.company?.name ?? dp.jobs?.[dp.jobs.length - 1]?.company?.name;
-        if (name) companyCounts[name] = (companyCounts[name] ?? 0) + 1;
+        if (name) dreamCompanyCounts[name] = (dreamCompanyCounts[name] ?? 0) + 1;
       }
-      const topDreamCompany = Object.entries(companyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Your dream company";
+      const topDreamCompanies = Object.entries(dreamCompanyCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([name]) => name);
 
-      yearCursor += 2;
+      let targetCompany = dreamCompany?.trim() || "";
+      if (!targetCompany) {
+        targetCompany = topDreamCompanies[0] ?? "Your dream company";
+      }
+      const altDreamCompanies = topDreamCompanies.filter(c => c !== targetCompany).slice(0, 4);
+
       steps.push({
         id: "dream-target",
         startYear: String(yearCursor),
         title: dreamRole.trim(),
-        company: topDreamCompany,
-        companyType: classifyCompany(topDreamCompany),
+        company: targetCompany,
+        companyType: classifyCompany(targetCompany),
         duration: "",
         isTarget: true,
-        predictionBasis: `Based on ${dreamPeople.length} professionals currently in this role`,
+        predictionBasis: `Est. ${yearCursor - nowYear} yr${yearCursor - nowYear !== 1 ? "s" : ""} from today based on real career transitions`,
+        transitionCount: pathSource.length,
+        alternativeCompanies: altDreamCompanies,
       } as any);
 
     } else {
@@ -202,7 +321,11 @@ export async function POST(req: NextRequest) {
         filters: [{ field: "jobs.title", type: "must", match_type: "fuzzy", string_values: [currentJob.title] }],
       }], 50);
 
-      const keyword = currentJob.title.toLowerCase().split(" ")[0];
+      const currNorm  = currentJob.title.trim().toLowerCase();
+      const currWords = currNorm.split(/\s+/).filter((w: string) => w.length > 2);
+      const currMatch = (t: string) => currWords.length > 1
+        ? currWords.every((w: string) => t.toLowerCase().includes(w))
+        : t.toLowerCase().includes(currWords[0] ?? currNorm);
       const nextMap: Record<string, { count: number; company: string; companyType: TimelineStep["companyType"] }> = {};
 
       for (const sp of similar) {
@@ -212,7 +335,7 @@ export async function POST(req: NextRequest) {
         for (let i = 0; i < spJobs.length - 1; i++) {
           const curr = spJobs[i];
           const next = spJobs[i + 1];
-          if (!curr.title?.toLowerCase().includes(keyword)) continue;
+          if (!currMatch(curr.title ?? "")) continue;
           const key = next.title?.toLowerCase().trim();
           if (!key || key === currentJob.title.toLowerCase().trim()) continue;
           if (!nextMap[key]) {

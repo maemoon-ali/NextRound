@@ -15,7 +15,7 @@ import { getResponseAnalysisForQuestion } from "@/lib/response-analysis";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { InterviewSearch, type InterviewRole } from "@/components/InterviewSearch";
 import { CareerTimeline, type TimelineStep } from "@/components/ui/career-timeline";
-import { ScanLoader } from "@/components/ui/animated-scan-loader";
+import { HoverTextGlow } from "@/components/ui/hover-text-glow";
 
 // ── Key-point checklists ─────────────────────────────────────────────────────
 const KEY_POINTS_TECHNICAL = [
@@ -466,6 +466,7 @@ function PrepareContent() {
   // ── Career Timeline state ─────────────────────────────────────────────────
   const [tlLinkedinUrl,  setTlLinkedinUrl]  = useState("");
   const [tlDreamRole,    setTlDreamRole]    = useState("");
+  const [tlDreamCompany, setTlDreamCompany] = useState("");
   const [tlSteps,        setTlSteps]        = useState<TimelineStep[] | null>(null);
   const [tlPersonName,   setTlPersonName]   = useState<string | undefined>(undefined);
   const [tlLoading,      setTlLoading]      = useState(false);
@@ -481,7 +482,7 @@ function PrepareContent() {
       const res = await fetch("/api/career-timeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim(), dreamRole: tlDreamRole.trim() }),
+        body: JSON.stringify({ linkedinUrl: tlLinkedinUrl.trim(), dreamRole: tlDreamRole.trim(), dreamCompany: tlDreamCompany.trim() }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "Failed to generate timeline");
@@ -960,103 +961,52 @@ function PrepareContent() {
                   {/* ── Phase: idle or loading — centered hero ───────────── */}
                   {!tlSteps && (
                     <div style={{
-                      minHeight: "62vh",
+                      minHeight: "80vh",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      position: "relative",
                     }}>
-
-                      {/* ── Idle: title + search bar ── */}
                       <div style={{
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
-                        gap: 28,
+                        gap: 14,
                         width: "100%",
-                        opacity: tlLoading ? 0 : 1,
-                        transform: tlLoading ? "scale(0.94) translateY(-14px)" : "scale(1) translateY(0)",
-                        transition: "opacity 0.32s ease, transform 0.38s ease",
-                        pointerEvents: tlLoading ? "none" : "auto",
+                        maxWidth: 560,
+                        padding: "0 20px",
                       }}>
+
                         {/* Heading */}
-                        <div style={{ textAlign: "center" }}>
-                          {/* "Timeline" word with ambient scan line sweeping over it */}
-                          <div style={{ position: "relative", display: "inline-block" }}>
-                            <h1 style={{
-                              fontSize: 54, fontWeight: 800, letterSpacing: "-0.035em",
-                              lineHeight: 1, color: "#ffffff", margin: 0,
-                            }}>
-                              Timeline
-                            </h1>
-                            {/* Glow halo */}
-                            <div className="animate-tl-scan" style={{
-                              position: "absolute", width: "100%", height: 8, borderRadius: 4,
-                              background: "rgba(167,139,250,0.50)", left: 0, top: 0,
-                              filter: "blur(10px)", pointerEvents: "none", zIndex: 1,
-                            }} />
-                            {/* Sharp laser */}
-                            <div className="animate-tl-scan" style={{
-                              position: "absolute", width: "100%", height: 3.5, borderRadius: 2,
-                              background: "#a78bfa", left: 0, top: 0,
-                              opacity: 0.82, pointerEvents: "none", zIndex: 2,
-                            }} />
+                        <div style={{ textAlign: "center", width: "100%" }}>
+                          {/* Animated hover-glow heading */}
+                          <div style={{ height: 110, width: "100%" }}>
+                            <HoverTextGlow text="Timeline" duration={0.22} />
                           </div>
                           <p style={{
-                            marginTop: 10, fontSize: 15.5, fontWeight: 400,
+                            marginTop: 28, marginBottom: 32, fontSize: 15, fontWeight: 300,
                             color: "rgba(255,255,255,0.38)", lineHeight: 1.5,
+                            fontFamily: "var(--font-sora), sans-serif",
+                            letterSpacing: "0.06em",
                           }}>
-                            Find your dream career pathway with{" "}
-                            <span style={{
-                              fontFamily: "var(--font-sora), sans-serif",
-                              fontWeight: 300,
-                              letterSpacing: "0.04em",
-                              color: "rgba(255,255,255,0.55)",
-                            }}>
-                              nexa
-                            </span>
+                            Find your dream career pathway
                           </p>
                         </div>
 
-                        {/* Pill search bar with LinkedIn logo + ambient scan line */}
+                        {/* LinkedIn URL pill */}
                         <div style={{
-                          position: "relative",
-                          display: "flex",
-                          alignItems: "center",
-                          width: "min(460px, 100%)",
-                          height: 54,
-                          borderRadius: 9999,
-                          overflow: "hidden",
+                          display: "flex", alignItems: "center",
+                          width: "min(560px, 100%)", height: 60, borderRadius: 9999,
                           background: "rgba(255,255,255,0.055)",
                           border: "1px solid rgba(255,255,255,0.13)",
-                          padding: "0 7px 0 16px",
+                          padding: "0 20px", gap: 12,
                           boxShadow: "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.3)",
-                          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-                        }}
-                          onFocus={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(167,139,250,0.4)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 4px rgba(167,139,250,0.10), 0 4px 24px rgba(0,0,0,0.3)"; }}
-                          onBlur={(e) =>  { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.13)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.3)"; }}
-                        >
-                          {/* Scan lines inside the pill — clipped by overflow:hidden */}
-                          <div className="animate-tl-scan" style={{
-                            position: "absolute", width: "100%", height: 8, borderRadius: 0,
-                            background: "rgba(167,139,250,0.35)", left: 0, top: 0,
-                            filter: "blur(8px)", pointerEvents: "none", zIndex: 1,
-                          }} />
-                          <div className="animate-tl-scan" style={{
-                            position: "absolute", width: "100%", height: 2.5,
-                            background: "#a78bfa", left: 0, top: 0,
-                            opacity: 0.65, pointerEvents: "none", zIndex: 2,
-                          }} />
-
-                          {/* LinkedIn logo */}
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, position: "relative", zIndex: 3 }}>
+                        }}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                             <rect width="24" height="24" rx="4" fill="#0A66C2"/>
                             <path d="M7.5 10.5H5V19H7.5V10.5Z" fill="white"/>
                             <circle cx="6.25" cy="7.5" r="1.5" fill="white"/>
                             <path d="M19 19H16.5V14.5C16.5 13.4 15.8 12.8 14.9 12.8C14 12.8 13.5 13.4 13.5 14.5V19H11V10.5H13.5V11.7C13.9 11 14.8 10.3 16 10.3C17.9 10.3 19 11.5 19 13.7V19Z" fill="white"/>
                           </svg>
-
-                          {/* Input */}
                           <input
                             type="url"
                             value={tlLinkedinUrl}
@@ -1064,169 +1014,141 @@ function PrepareContent() {
                             onKeyDown={e => e.key === "Enter" && generateTimeline()}
                             placeholder="linkedin.com/in/your-name"
                             style={{
-                              flex: 1,
-                              background: "none",
-                              border: "none",
-                              outline: "none",
-                              fontSize: 14,
-                              color: "#ffffff",
-                              padding: "0 12px",
-                              minWidth: 0,
-                              position: "relative",
-                              zIndex: 3,
+                              flex: 1, background: "none", border: "none", outline: "none",
+                              fontSize: 15, color: "#ffffff", minWidth: 0,
                             }}
                           />
-
-                          {/* Arrow submit button */}
-                          <button
-                            type="button"
-                            onClick={generateTimeline}
-                            disabled={!tlLinkedinUrl.trim() || !tlDreamRole.trim()}
-                            style={{
-                              width: 40, height: 40, borderRadius: "50%", flexShrink: 0, position: "relative", zIndex: 3,
-                              background: (tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "rgba(167,139,250,0.22)" : "rgba(255,255,255,0.05)",
-                              border: `1px solid ${(tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              color: (tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "#a78bfa" : "rgba(255,255,255,0.25)",
-                              transition: "all 0.2s ease",
-                              cursor: (tlLinkedinUrl.trim() && tlDreamRole.trim()) ? "pointer" : "default",
-                            }}
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M5 12h14M13 6l6 6-6 6"/>
-                            </svg>
-                          </button>
                         </div>
 
-                        {/* Dream role pill */}
+                        {/* ── Connected dream role + company pill ── */}
                         <div style={{
-                          position: "relative",
-                          display: "flex",
-                          alignItems: "center",
-                          width: "min(460px, 100%)",
-                          height: 54,
-                          borderRadius: 9999,
-                          overflow: "hidden",
+                          display: "flex", alignItems: "stretch",
+                          width: "min(560px, 100%)", height: 60, borderRadius: 9999,
                           background: "rgba(255,255,255,0.055)",
                           border: "1px solid rgba(255,255,255,0.13)",
-                          padding: "0 7px 0 16px",
+                          overflow: "hidden",
                           boxShadow: "0 0 0 4px rgba(52,211,153,0.04), 0 4px 24px rgba(0,0,0,0.3)",
-                          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
                         }}>
-                          {/* Scan lines inside dream role pill */}
-                          <div className="animate-tl-scan" style={{
-                            position: "absolute", width: "100%", height: 8,
-                            background: "rgba(52,211,153,0.30)", left: 0, top: 0,
-                            filter: "blur(8px)", pointerEvents: "none", zIndex: 1,
-                          }} />
-                          <div className="animate-tl-scan" style={{
-                            position: "absolute", width: "100%", height: 2.5,
-                            background: "#34d399", left: 0, top: 0,
-                            opacity: 0.55, pointerEvents: "none", zIndex: 2,
-                          }} />
+                          {/* Dream role side */}
+                          <div style={{
+                            flex: 1, display: "flex", alignItems: "center",
+                            gap: 10, padding: "0 20px", minWidth: 0,
+                          }}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.75 }}>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                            <input
+                              type="text"
+                              value={tlDreamRole}
+                              onChange={e => setTlDreamRole(e.target.value)}
+                              onKeyDown={e => e.key === "Enter" && generateTimeline()}
+                              placeholder="Dream role"
+                              style={{
+                                flex: 1, background: "none", border: "none", outline: "none",
+                                fontSize: 15, color: "#ffffff", minWidth: 0,
+                              }}
+                            />
+                          </div>
 
-                          {/* Star/target icon */}
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.75, position: "relative", zIndex: 3 }}>
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                          </svg>
+                          {/* Divider */}
+                          <div style={{ width: 1, background: "rgba(255,255,255,0.11)", flexShrink: 0, margin: "12px 0" }} />
 
-                          {/* Input */}
-                          <input
-                            type="text"
-                            value={tlDreamRole}
-                            onChange={e => setTlDreamRole(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && generateTimeline()}
-                            placeholder="Dream job title  (e.g. Staff Engineer)"
-                            style={{
-                              flex: 1,
-                              background: "none",
-                              border: "none",
-                              outline: "none",
-                              fontSize: 14,
-                              color: "#ffffff",
-                              padding: "0 12px",
-                              minWidth: 0,
-                              position: "relative",
-                              zIndex: 3,
-                            }}
-                          />
+                          {/* Dream company side */}
+                          <div style={{
+                            flex: 1, display: "flex", alignItems: "center",
+                            gap: 10, padding: "0 20px", minWidth: 0,
+                          }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.75 }}>
+                              <path d="M3 21V7l9-4 9 4v14"/><path d="M9 21V11h6v10"/><path d="M3 7h18"/>
+                            </svg>
+                            <input
+                              type="text"
+                              value={tlDreamCompany}
+                              onChange={e => setTlDreamCompany(e.target.value)}
+                              onKeyDown={e => e.key === "Enter" && generateTimeline()}
+                              placeholder="Dream company"
+                              style={{
+                                flex: 1, background: "none", border: "none", outline: "none",
+                                fontSize: 15, color: "#ffffff", minWidth: 0,
+                              }}
+                            />
+                          </div>
                         </div>
 
-                        {/* Error message */}
+                        {/* Error */}
                         {tlError && (
-                          <p style={{ fontSize: 13, color: "rgba(251,191,36,0.75)", textAlign: "center", maxWidth: 420 }}>
+                          <p style={{ fontSize: 13, color: "rgba(251,191,36,0.75)", textAlign: "center", maxWidth: 460 }}>
                             {tlError}
                           </p>
                         )}
-                      </div>
 
-                      {/* ── Scan loader (fades in while loading) ── */}
-                      <div style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        opacity: tlLoading ? 1 : 0,
-                        transform: tlLoading ? "scale(1)" : "scale(1.04)",
-                        transition: "opacity 0.32s ease 0.18s, transform 0.38s ease 0.18s",
-                        pointerEvents: "none",
-                      }}>
-                        <ScanLoader />
+                        {/* Generate button */}
+                        <button
+                          type="button"
+                          onClick={generateTimeline}
+                          disabled={!tlLinkedinUrl.trim() || !tlDreamRole.trim() || !tlDreamCompany.trim() || tlLoading}
+                          style={{
+                            marginTop: 8, height: 54, padding: "0 44px",
+                            borderRadius: 9999, fontSize: 15, fontWeight: 700,
+                            letterSpacing: "0.01em",
+                            display: "flex", alignItems: "center", gap: 8,
+                            transition: "all 0.2s ease",
+                            cursor: (tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading) ? "pointer" : "default",
+                            background: (tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading)
+                              ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.04)",
+                            border: `1px solid ${(tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading) ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
+                            color: (tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading)
+                              ? "#a78bfa" : "rgba(255,255,255,0.22)",
+                          }}
+                        >
+                          {tlLoading ? (
+                            <>
+                              <span className="animate-spin" style={{
+                                width: 14, height: 14, borderRadius: "50%",
+                                border: "2px solid rgba(167,139,250,0.30)",
+                                borderTopColor: "#a78bfa",
+                                flexShrink: 0, display: "inline-block",
+                              }} />
+                              Generating…
+                            </>
+                          ) : "Generate Timeline"}
+                        </button>
                       </div>
                     </div>
                   )}
 
-                  {/* ── Phase: done — timeline results ───────────────────────── */}
+                  {/* ── Phase: done — timeline canvas ────────────────────────── */}
                   {tlSteps && !tlLoading && (
-                    <div className="animate-tl-in">
-                      {/* Search again bar */}
-                      <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        marginBottom: 24,
-                      }}>
-                        <button
-                          type="button"
-                          onClick={() => { setTlSteps(null); setTlPersonName(undefined); setTlError(null); setTlDreamRole(""); }}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            background: "none", border: "none", padding: "4px 0",
-                            color: "rgba(255,255,255,0.30)", fontSize: 12, fontWeight: 600,
-                            cursor: "pointer", letterSpacing: "0.03em",
-                            transition: "color 0.15s ease",
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-                          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.30)")}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M19 12H5M11 6l-6 6 6 6"/>
-                          </svg>
-                          Search again
-                        </button>
-                        {tlPersonName && (
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.20)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                            {tlPersonName}
-                          </span>
-                        )}
-                      </div>
+                    <div className="animate-tl-in" style={{ position: "relative" }}>
+                      {/* Floating "search again" button */}
+                      <button
+                        type="button"
+                        onClick={() => { setTlSteps(null); setTlPersonName(undefined); setTlError(null); setTlDreamRole(""); setTlDreamCompany(""); }}
+                        style={{
+                          position: "absolute", top: 14, left: 14, zIndex: 30,
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "6px 14px", borderRadius: 8,
+                          background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)",
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          color: "rgba(255,255,255,0.38)", fontSize: 11, fontWeight: 600,
+                          cursor: "pointer", letterSpacing: "0.03em",
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.10)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.38)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; }}
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M19 12H5M11 6l-6 6 6 6"/>
+                        </svg>
+                        New search
+                      </button>
 
-                      {/* Timeline */}
-                      <div style={{
-                        borderRadius: 16,
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        background: "rgba(255,255,255,0.015)",
-                        padding: "28px 24px",
-                        position: "relative",
-                      }}>
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/20 to-transparent rounded-t-2xl" />
-                        <CareerTimeline
-                          steps={tlSteps}
-                          personName={undefined}
-                          loading={false}
-                        />
-                      </div>
+                      {/* Full spatial canvas timeline */}
+                      <CareerTimeline
+                        steps={tlSteps}
+                        personName={tlPersonName}
+                        loading={false}
+                      />
                     </div>
                   )}
                   </>
