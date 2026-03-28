@@ -149,8 +149,8 @@ function SearchContainer({ isCollapsed = false }: { isCollapsed?: boolean }) {
 function getSidebarContent(
   section: SidebarSection,
   opts: {
-    activeTab: "recommended" | "saved" | "attempted";
-    onTabChange: (t: "recommended" | "saved" | "attempted") => void;
+    activeTab: "recommended" | "saved" | "attempted" | "timeline";
+    onTabChange: (t: "recommended" | "saved" | "attempted" | "timeline") => void;
     savedCount: number;
     attemptedCount: number;
   }
@@ -181,6 +181,18 @@ function getSidebarContent(
               label: `Completed${attemptedCount > 0 ? ` (${attemptedCount})` : ""}`,
               isActive: activeTab === "attempted",
               onClick: () => onTabChange("attempted"),
+            },
+            {
+              icon: (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={activeTab === "timeline" ? "text-violet-400" : "text-zinc-400"}>
+                  <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                  <line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/>
+                  <path d="M8 5h-2a2 2 0 0 0 0 4h2M16 5h2a2 2 0 0 1 0 4h-2M8 19h-2a2 2 0 0 1 0-4h2M16 19h2a2 2 0 0 0 0-4h-2"/>
+                </svg>
+              ),
+              label: "Career Timeline",
+              isActive: activeTab === "timeline",
+              onClick: () => onTabChange("timeline"),
             },
           ],
         },
@@ -585,8 +597,8 @@ function DetailSidebar({
   attemptedCount,
 }: {
   section: SidebarSection;
-  activeTab: "recommended" | "saved" | "attempted";
-  onTabChange: (t: "recommended" | "saved" | "attempted") => void;
+  activeTab: "recommended" | "saved" | "attempted" | "timeline";
+  onTabChange: (t: "recommended" | "saved" | "attempted" | "timeline") => void;
   savedCount: number;
   attemptedCount: number;
 }) {
@@ -850,8 +862,8 @@ function IconNavRail({
 
 // ── Main export ──────────────────────────────────────────────────────────────
 export interface NextRoundSidebarProps {
-  activeTab: "recommended" | "saved" | "attempted";
-  onTabChange: (t: "recommended" | "saved" | "attempted") => void;
+  activeTab: "recommended" | "saved" | "attempted" | "timeline";
+  onTabChange: (t: "recommended" | "saved" | "attempted" | "timeline") => void;
   savedCount?: number;
   attemptedCount?: number;
   className?: string;
@@ -869,7 +881,7 @@ export function NextRoundSidebar({
   const pathname = usePathname();
 
   // Map tab → default sidebar section
-  const defaultSectionForTab = (t: "recommended" | "saved" | "attempted"): SidebarSection => {
+  const defaultSectionForTab = (t: "recommended" | "saved" | "attempted" | "timeline"): SidebarSection => {
     if (t === "saved") return "saved";
     if (t === "attempted") return "progress";
     return "matches";
