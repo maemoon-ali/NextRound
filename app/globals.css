@@ -619,6 +619,32 @@ input[type="number"].nr-number-input {
   color: rgb(5, 150, 105); /* emerald-600 */
 }
 
+/* ── Career Timeline: scan-loader animation ─────────────────────────────────
+   tl-scan  — laser line sweeps top → bottom → top over the word "Timeline"
+   tl-cut   — clip-path slices the text in sync with the laser
+   tl-in    — timeline results slide + fade in once data is ready           */
+@keyframes tl-scan {
+  0%   { top: 0; }
+  25%  { top: 58px; }
+  50%  { top: 0; }
+  75%  { top: 58px; }
+  100% { top: 0; }
+}
+@keyframes tl-cut {
+  0%   { clip-path: inset(0 0 0 0); }
+  25%  { clip-path: inset(100% 0 0 0); }
+  50%  { clip-path: inset(0 0 100% 0); }
+  75%  { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+@keyframes tl-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-tl-scan { animation: tl-scan 2.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+.animate-tl-cut  { animation: tl-cut  2.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+.animate-tl-in   { animation: tl-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 /* ── Hold-to-save card animations ──────────────────────────────────────────── */
 @keyframes nr-bounce-in {
   0%   { transform: scale(0.3); opacity: 0; }

@@ -447,7 +447,7 @@ function getSidebarContent(
     },
 
     timeline: {
-      title: "Career Timeline",
+      title: "Timeline",
       sections: [
         {
           title: "Dream Job Planner",
@@ -756,7 +756,7 @@ function IconNavRail({
           <line x1="12" y1="14.2" x2="12" y2="16.8"/>
         </svg>
       ),
-      label: "Career Timeline",
+      label: "Timeline",
       href: "/prepare",
     },
   ];

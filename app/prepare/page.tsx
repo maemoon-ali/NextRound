@@ -15,6 +15,7 @@ import { getResponseAnalysisForQuestion } from "@/lib/response-analysis";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { InterviewSearch, type InterviewRole } from "@/components/InterviewSearch";
 import { CareerTimeline, type TimelineStep } from "@/components/ui/career-timeline";
+import { ScanLoader } from "@/components/ui/animated-scan-loader";
 
 // ── Key-point checklists ─────────────────────────────────────────────────────
 const KEY_POINTS_TECHNICAL = [
@@ -954,89 +955,195 @@ function PrepareContent() {
 
                 {/* ── CAREER TIMELINE ───────────────────────────────────────── */}
                 {tab === "timeline" && (
-                  <div className="space-y-5">
-                    {/* Header */}
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-5 rounded-full bg-violet-400 shrink-0 shadow-[0_0_10px_rgba(167,139,250,0.6)]" />
-                      <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--pg-text)" }}>Career Timeline</h2>
-                    </div>
-                    <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>
-                      Paste your LinkedIn URL to visualise your career path and see predicted next moves — powered by live workforce data.
-                    </p>
+                  <>
+                  {/* ── Phase: idle or loading — centered hero ───────────── */}
+                  {!tlSteps && (
+                    <div style={{
+                      minHeight: "62vh",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "relative",
+                    }}>
 
-                    {/* Input card */}
-                    <div className="relative rounded-xl overflow-hidden border border-white/[0.09] bg-white/[0.03] p-5 space-y-3">
-                      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
-                      <div>
-                        <label className="block text-xs font-semibold text-white/45 mb-1.5 uppercase tracking-wide">LinkedIn Profile URL</label>
-                        <input
-                          type="url"
-                          value={tlLinkedinUrl}
-                          onChange={e => setTlLinkedinUrl(e.target.value)}
-                          onKeyDown={e => e.key === "Enter" && generateTimeline()}
-                          placeholder="https://linkedin.com/in/your-name"
-                          className="w-full rounded-lg px-3 py-2.5 text-sm text-white bg-white/[0.06] border border-white/10 focus:outline-none focus:border-violet-400/50 placeholder:text-white/20 transition-colors"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={generateTimeline}
-                        disabled={tlLoading || !tlLinkedinUrl.trim()}
-                        className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white bg-violet-500/20 border border-violet-400/30 hover:bg-violet-500/30 hover:border-violet-400/50 disabled:opacity-40 disabled:pointer-events-none transition-all duration-150"
-                      >
-                        {tlLoading ? (
-                          <>
-                            <span className="size-3.5 rounded-full border-2 border-violet-400/40 border-t-violet-300 animate-spin" />
-                            Building timeline…
-                          </>
-                        ) : (
-                          <>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                              <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
-                              <line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/>
-                            </svg>
-                            Generate Timeline
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Error */}
-                    {tlError && (
-                      <p className="text-sm text-amber-400/80 px-1">{tlError}</p>
-                    )}
-
-                    {/* Timeline */}
-                    {(tlSteps || tlLoading) && (
-                      <div className="relative rounded-xl overflow-hidden border border-white/[0.07] bg-white/[0.015] px-6 py-7">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/20 to-transparent" />
-                        <CareerTimeline
-                          steps={tlSteps ?? []}
-                          personName={tlPersonName}
-                          loading={tlLoading}
-                        />
-                      </div>
-                    )}
-
-                    {/* Empty state */}
-                    {!tlSteps && !tlLoading && !tlError && (
-                      <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.015] p-10 text-center">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/15 to-transparent" />
-                        <div className="flex flex-col items-center gap-3">
-                          {/* Mini preview spine */}
-                          <div className="flex flex-col items-center gap-0" style={{ opacity: 0.25 }}>
-                            {[1,2,3].map((_, i) => (
-                              <React.Fragment key={i}>
-                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa" }} />
-                                {i < 2 && <div style={{ width: 1.5, height: 16, background: "rgba(167,139,250,0.4)" }} />}
-                              </React.Fragment>
-                            ))}
-                          </div>
-                          <p className="text-sm font-medium text-white/28">Paste your LinkedIn URL to see your career story</p>
+                      {/* ── Idle: title + search bar ── */}
+                      <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 28,
+                        width: "100%",
+                        opacity: tlLoading ? 0 : 1,
+                        transform: tlLoading ? "scale(0.94) translateY(-14px)" : "scale(1) translateY(0)",
+                        transition: "opacity 0.32s ease, transform 0.38s ease",
+                        pointerEvents: tlLoading ? "none" : "auto",
+                      }}>
+                        {/* Heading */}
+                        <div style={{ textAlign: "center" }}>
+                          <h1 style={{
+                            fontSize: 54, fontWeight: 800, letterSpacing: "-0.035em",
+                            lineHeight: 1, color: "#ffffff", margin: 0,
+                          }}>
+                            Timeline
+                          </h1>
+                          <p style={{
+                            marginTop: 10, fontSize: 15.5, fontWeight: 400,
+                            color: "rgba(255,255,255,0.38)", lineHeight: 1.5,
+                          }}>
+                            Find your career pathway with{" "}
+                            <span style={{
+                              fontFamily: "var(--font-sora), sans-serif",
+                              fontWeight: 300,
+                              letterSpacing: "0.04em",
+                              color: "rgba(255,255,255,0.55)",
+                            }}>
+                              nexa
+                            </span>
+                          </p>
                         </div>
+
+                        {/* Pill search bar with LinkedIn logo */}
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          width: "min(460px, 100%)",
+                          height: 54,
+                          borderRadius: 9999,
+                          background: "rgba(255,255,255,0.055)",
+                          border: "1px solid rgba(255,255,255,0.13)",
+                          padding: "0 7px 0 16px",
+                          boxShadow: "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.3)",
+                          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                        }}
+                          onFocus={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(167,139,250,0.4)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 4px rgba(167,139,250,0.10), 0 4px 24px rgba(0,0,0,0.3)"; }}
+                          onBlur={(e) =>  { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.13)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.3)"; }}
+                        >
+                          {/* LinkedIn logo */}
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                            <rect width="24" height="24" rx="4" fill="#0A66C2"/>
+                            <path d="M7.5 10.5H5V19H7.5V10.5Z" fill="white"/>
+                            <circle cx="6.25" cy="7.5" r="1.5" fill="white"/>
+                            <path d="M19 19H16.5V14.5C16.5 13.4 15.8 12.8 14.9 12.8C14 12.8 13.5 13.4 13.5 14.5V19H11V10.5H13.5V11.7C13.9 11 14.8 10.3 16 10.3C17.9 10.3 19 11.5 19 13.7V19Z" fill="white"/>
+                          </svg>
+
+                          {/* Input */}
+                          <input
+                            type="url"
+                            value={tlLinkedinUrl}
+                            onChange={e => setTlLinkedinUrl(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && generateTimeline()}
+                            placeholder="linkedin.com/in/your-name"
+                            style={{
+                              flex: 1,
+                              background: "none",
+                              border: "none",
+                              outline: "none",
+                              fontSize: 14,
+                              color: "#ffffff",
+                              padding: "0 12px",
+                              minWidth: 0,
+                            }}
+                          />
+
+                          {/* Arrow submit button */}
+                          <button
+                            type="button"
+                            onClick={generateTimeline}
+                            disabled={!tlLinkedinUrl.trim()}
+                            style={{
+                              width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                              background: tlLinkedinUrl.trim() ? "rgba(167,139,250,0.22)" : "rgba(255,255,255,0.05)",
+                              border: `1px solid ${tlLinkedinUrl.trim() ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: tlLinkedinUrl.trim() ? "#a78bfa" : "rgba(255,255,255,0.25)",
+                              transition: "all 0.2s ease",
+                              cursor: tlLinkedinUrl.trim() ? "pointer" : "default",
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 12h14M13 6l6 6-6 6"/>
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Error message */}
+                        {tlError && (
+                          <p style={{ fontSize: 13, color: "rgba(251,191,36,0.75)", textAlign: "center", maxWidth: 420 }}>
+                            {tlError}
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
+
+                      {/* ── Scan loader (fades in while loading) ── */}
+                      <div style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: tlLoading ? 1 : 0,
+                        transform: tlLoading ? "scale(1)" : "scale(1.04)",
+                        transition: "opacity 0.32s ease 0.18s, transform 0.38s ease 0.18s",
+                        pointerEvents: "none",
+                      }}>
+                        <ScanLoader />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Phase: done — timeline results ───────────────────────── */}
+                  {tlSteps && !tlLoading && (
+                    <div className="animate-tl-in">
+                      {/* Search again bar */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        marginBottom: 24,
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => { setTlSteps(null); setTlPersonName(undefined); setTlError(null); }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            background: "none", border: "none", padding: "4px 0",
+                            color: "rgba(255,255,255,0.30)", fontSize: 12, fontWeight: 600,
+                            cursor: "pointer", letterSpacing: "0.03em",
+                            transition: "color 0.15s ease",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
+                          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.30)")}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <path d="M19 12H5M11 6l-6 6 6 6"/>
+                          </svg>
+                          Search again
+                        </button>
+                        {tlPersonName && (
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.20)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                            {tlPersonName}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Timeline */}
+                      <div style={{
+                        borderRadius: 16,
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        background: "rgba(255,255,255,0.015)",
+                        padding: "28px 24px",
+                        position: "relative",
+                      }}>
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/20 to-transparent rounded-t-2xl" />
+                        <CareerTimeline
+                          steps={tlSteps}
+                          personName={undefined}
+                          loading={false}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  </>
                 )}
 
                 {/* ── SETTINGS ──────────────────────────────────────────────── */}
