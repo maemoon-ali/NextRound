@@ -970,6 +970,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
             </div>
 
           </div>{/* end bottom actions block */}
+      </div>{/* end space-y-3 content wrapper */}
       </div>{/* end overflow:hidden */}
       </div>{/* end grid animation wrapper */}
 
