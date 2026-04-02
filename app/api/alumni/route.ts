@@ -41,10 +41,26 @@ export async function GET(request: Request) {
       ],
     };
 
-    // Parallel: true total count + 300-person sample for trends/profiles
-    const [countResult, dataResult] = await Promise.all([
+    // Date threshold for "surge" query — alumni who started a job in the last 2 years
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    const surgeDateFrom = twoYearsAgo.toISOString().slice(0, 10);
+
+    const eduFiltersBase: LdtFilter[] = [
+      { field: "education.school", type: "must", match_type: "fuzzy", string_values: [school] },
+      ...(major ? [{ field: "education.field", type: "must" as const, match_type: "fuzzy" as const, string_values: [major] }] : []),
+    ];
+
+    // Parallel: true total count + 300-person sample + surge (recent hires from school)
+    const [countResult, dataResult, surgeResult] = await Promise.all([
       searchPeopleWithTotal([baseFilter], 1),
       searchPeopleWithTotal([baseFilter], 300),
+      searchPeopleWithTotal([
+        { operator: "and", isJobsGroup: false, filters: eduFiltersBase },
+        { operator: "and", isJobsGroup: true,  filters: [
+          { field: "jobs.started_at", type: "must", date_from: surgeDateFrom },
+        ]},
+      ], 200).catch(() => ({ people: [], total: 0 })),
     ]);
 
     const realTotal = countResult.total;
@@ -134,6 +150,19 @@ export async function GET(request: Request) {
 
     const seniorPct = Math.round((seniorCount / people.length) * 100);
 
+    // ── Surge companies: aggregate recent-hire sample by company ──────────
+    const surgeCounts = new Map<string, number>();
+    for (const p of surgeResult.people) {
+      const co = p.current_position.company.name?.trim();
+      if (co && !isEduInstitution(co)) {
+        surgeCounts.set(co, (surgeCounts.get(co) ?? 0) + 1);
+      }
+    }
+    const surge_companies = [...surgeCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([name, recent_count]) => ({ name, recent_count }));
+
     // ── Alumni profile cards ───────────────────────────────────────────────
     const alumni = people.slice(0, 24).map((p) => ({
       id:               p.id,
@@ -150,9 +179,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       alumni,
       trends: {
-        top_companies,   // real counts from full dataset
-        top_functions,   // from 300-person sample
-        top_locations,   // from 300-person sample
+        top_companies,    // real counts from full dataset
+        top_functions,    // from 300-person sample
+        top_locations,    // from 300-person sample
+        surge_companies,  // companies with most recent hires from this school
         total:      realTotal,
         sample:     people.length,
         senior_pct: seniorPct,

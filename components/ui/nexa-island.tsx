@@ -503,7 +503,7 @@ export function NexaIsland({ onClose }: { onClose?: () => void }) {
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/nexa-loading.png" alt="Nexa" draggable="false"
+                src="/nexa-avatar.jpeg" alt="Nexa" draggable="false"
                 onDragStart={(e) => e.preventDefault()}
                 style={{
                   width: CIRCLE_SIZE, height: CIRCLE_SIZE,

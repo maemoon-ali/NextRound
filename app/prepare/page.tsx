@@ -776,79 +776,87 @@ function AlumniSection() {
               </div>
             </div>
 
-            {/* ── Now Hiring ──────────────────────────────────────────────── */}
-            <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
-              <div className="px-5 pt-5 pb-4 border-b border-white/[0.07] flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-white">Now Hiring</p>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">Open roles at top alumni employers — click to apply</p>
+            {/* ── Hiring Surge ────────────────────────────────────────────── */}
+            {(() => {
+              const surgeList: { name: string; recent_count: number }[] =
+                (trends.surge_companies && trends.surge_companies.length > 0)
+                  ? trends.surge_companies
+                  : trends.top_companies.slice(0, 6).map((co: { name: string; count: number }) => ({ name: co.name, recent_count: co.count }));
+              const surgeAccentColors = ["#34d399", "#60a5fa", "#a78bfa", "#f472b6", "#fb923c", "#f59e0b"];
+              return (
+                <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
+                  <div className="px-5 pt-5 pb-4 border-b border-white/[0.07] flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-white">Hiring Surge</p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">Companies with a surge of new hires from {searchedSchool} — click to apply</p>
+                    </div>
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-400 uppercase tracking-widest shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live
+                    </span>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {surgeList.map((co, i) => {
+                      const jobsUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.name)}&f_TPR=r604800`;
+                      const accentColor = surgeAccentColors[i % surgeAccentColors.length];
+                      return (
+                        <a
+                          key={co.name}
+                          href={jobsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group flex flex-col rounded-xl border bg-white/[0.03] hover:bg-white/[0.07] transition-all duration-200 overflow-hidden"
+                          style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                        >
+                          {/* Colored top accent bar */}
+                          <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${accentColor}90, transparent)` }} />
+
+                          <div className="p-4 flex-1 flex flex-col gap-3">
+                            {/* Logo + name row */}
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-white flex items-center justify-center shrink-0 overflow-hidden" style={{ borderRadius: 0 }}>
+                                <img
+                                  src={`/api/logo?company=${encodeURIComponent(co.name)}`}
+                                  alt={co.name}
+                                  className="w-8 h-8 object-contain"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                    (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                                      `<span style="font-size:14px;font-weight:900;color:#1e293b">${co.name.trim()[0]?.toUpperCase()}</span>`;
+                                  }}
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-white truncate">{co.name}</p>
+                                {/* Surge indicator */}
+                                <p className="text-[11px] mt-0.5 flex items-center gap-1">
+                                  <span style={{ color: accentColor }} className="font-black">↑ {co.recent_count}</span>
+                                  <span className="text-zinc-500">new hires (2 yrs)</span>
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Spacer */}
+                            <div className="flex-1" />
+
+                            {/* Apply CTA */}
+                            <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                              <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">LinkedIn Jobs</span>
+                              <div className="flex items-center gap-1.5 text-xs font-bold group-hover:opacity-80 transition-opacity" style={{ color: accentColor }}>
+                                Apply now
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <path d="M5 12h14M13 6l6 6-6 6"/>
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
-                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-400 uppercase tracking-widest shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
-                </span>
-              </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {trends.top_companies.slice(0, 6).map((co, i) => {
-                  const jobsUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.name)}&f_TPR=r604800`;
-                  const rankColors = ["#f59e0b", "#94a3b8", "#b45309"];
-                  const rankColor = rankColors[i] ?? "#52525b";
-                  return (
-                    <a
-                      key={co.name}
-                      href={jobsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex flex-col rounded-xl border bg-white/[0.03] hover:bg-white/[0.07] transition-all duration-200 overflow-hidden"
-                      style={{ borderColor: "rgba(255,255,255,0.08)" }}
-                    >
-                      {/* Top accent bar keyed to rank */}
-                      <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${rankColor}90, transparent)` }} />
-
-                      <div className="p-4 flex-1 flex flex-col gap-3">
-                        {/* Logo + name row */}
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-white flex items-center justify-center shrink-0 overflow-hidden" style={{ borderRadius: 0 }}>
-                            <img
-                              src={`/api/logo?company=${encodeURIComponent(co.name)}`}
-                              alt={co.name}
-                              className="w-8 h-8 object-contain"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).style.display = "none";
-                                (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                                  `<span style="font-size:14px;font-weight:900;color:#1e293b">${co.name.trim()[0]?.toUpperCase()}</span>`;
-                              }}
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-white truncate">{co.name}</p>
-                            <p className="text-[11px] text-zinc-500 mt-0.5">
-                              <span style={{ color: rankColor }} className="font-bold">{co.count.toLocaleString()}</span> alumni here
-                            </p>
-                          </div>
-                          {/* Rank badge */}
-                          <span className="text-xs font-black tabular-nums shrink-0" style={{ color: rankColor }}>#{i + 1}</span>
-                        </div>
-
-                        {/* Spacer */}
-                        <div className="flex-1" />
-
-                        {/* Apply CTA */}
-                        <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
-                          <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">LinkedIn Jobs</span>
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors">
-                            View open roles
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M5 12h14M13 6l6 6-6 6"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
+              );
+            })()}
 
             {/* ── Alumni Profiles ─────────────────────────────────────────── */}
             <div className="flex items-center justify-between">
