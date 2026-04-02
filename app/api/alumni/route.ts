@@ -86,7 +86,8 @@ export async function GET(request: Request) {
         functionCounts.set(label, (functionCounts.get(label) ?? 0) + 1);
       }
 
-      const loc = (p.current_position.location ?? "").split(",").pop()?.trim();
+      // Use first segment (city/area) not last (country)
+      const loc = (p.current_position.location ?? "").split(",")[0]?.trim();
       if (loc && loc.length > 1) locationCounts.set(loc, (locationCounts.get(loc) ?? 0) + 1);
 
       const lvl = p.current_position.level;
