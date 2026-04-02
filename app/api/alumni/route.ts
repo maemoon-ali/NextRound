@@ -22,6 +22,22 @@ const EDU_KEYWORDS = ["university", "college", "school", "institute", "academy",
 const isEduInstitution = (name: string) =>
   EDU_KEYWORDS.some(kw => name.toLowerCase().includes(kw));
 
+// Country names to exclude from location stats — we only want cities/areas
+const COUNTRY_NAMES = new Set([
+  "united states", "canada", "united kingdom", "germany", "france",
+  "australia", "india", "china", "japan", "brazil", "mexico",
+  "netherlands", "singapore", "sweden", "switzerland", "israel",
+  "south korea", "spain", "italy", "russia", "new zealand",
+  "denmark", "norway", "finland", "belgium", "austria",
+  "ireland", "portugal", "poland", "argentina", "colombia",
+  "indonesia", "malaysia", "thailand", "vietnam", "philippines",
+  "egypt", "nigeria", "south africa", "kenya", "ghana",
+  "pakistan", "bangladesh", "sri lanka", "ukraine", "turkey",
+  "greece", "czech republic", "hungary", "romania", "slovakia",
+  "united arab emirates", "saudi arabia", "qatar", "kuwait",
+]);
+const isCountry = (loc: string) => COUNTRY_NAMES.has(loc.toLowerCase());
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const school = searchParams.get("school")?.trim() ?? "";
@@ -86,9 +102,9 @@ export async function GET(request: Request) {
         functionCounts.set(label, (functionCounts.get(label) ?? 0) + 1);
       }
 
-      // Use first segment (city/area) not last (country)
+      // Use first segment (city/area), skip country-only entries
       const loc = (p.current_position.location ?? "").split(",")[0]?.trim();
-      if (loc && loc.length > 1) locationCounts.set(loc, (locationCounts.get(loc) ?? 0) + 1);
+      if (loc && loc.length > 1 && !isCountry(loc)) locationCounts.set(loc, (locationCounts.get(loc) ?? 0) + 1);
 
       const lvl = p.current_position.level;
       if (["senior", "manager", "director", "vp", "c_suite"].includes(lvl ?? "")) seniorCount++;
