@@ -77,7 +77,15 @@ export async function GET(request: Request) {
       }
     }
 
+    // Filter out educational institutions — they shouldn't appear as "hiring companies"
+    const EDU_KEYWORDS = ["university", "college", "school", "institute", "academy", "polytechnic", "seminary"];
+    const isEduInstitution = (name: string) => {
+      const n = name.toLowerCase();
+      return EDU_KEYWORDS.some(kw => n.includes(kw));
+    };
+
     const top_companies = [...companyCounts.entries()]
+      .filter(([name]) => !isEduInstitution(name))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
       .map(([name, count]) => ({

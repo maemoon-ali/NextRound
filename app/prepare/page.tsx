@@ -613,37 +613,35 @@ function AlumniSection() {
         return (
           <>
             {/* ── Hero stat bar ───────────────────────────────────────────── */}
-            <div className="relative rounded-2xl overflow-hidden border border-white/[0.10] bg-white/[0.04] px-6 py-5"
+            <div className="relative rounded-2xl border border-white/[0.10] bg-white/[0.04] px-6 py-5"
               style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
-              <div className="flex items-center justify-between flex-wrap gap-6">
+              <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-5">
                 <div>
-                  <div className="text-4xl font-black text-white tracking-tight leading-none">{trends.total.toLocaleString()}</div>
-                  <div className="text-xs font-semibold text-blue-300/70 uppercase tracking-widest mt-1">Alumni in Dataset</div>
+                  <div className="text-3xl font-black text-white tracking-tight leading-none">{trends.total.toLocaleString()}</div>
+                  <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mt-1.5">Alumni in Dataset</div>
                 </div>
-                <div className="w-px h-10 bg-white/[0.08] hidden sm:block" />
                 <div>
-                  <div className="text-4xl font-black text-white tracking-tight leading-none">{trends.senior_pct ?? "—"}%</div>
-                  <div className="text-xs font-semibold text-emerald-300/70 uppercase tracking-widest mt-1">In Senior+ Roles</div>
+                  <div className="text-3xl font-black text-white tracking-tight leading-none">{trends.senior_pct ?? "—"}%</div>
+                  <div className="text-[10px] font-bold text-emerald-300/70 uppercase tracking-widest mt-1.5">In Senior+ Roles</div>
                 </div>
-                <div className="w-px h-10 bg-white/[0.08] hidden sm:block" />
                 <div>
-                  <div className="text-4xl font-black text-white tracking-tight leading-none">{trends.top_companies.length}</div>
-                  <div className="text-xs font-semibold text-violet-300/70 uppercase tracking-widest mt-1">Companies Hiring</div>
+                  <div className="text-3xl font-black text-white tracking-tight leading-none">{trends.top_companies.length}</div>
+                  <div className="text-[10px] font-bold text-violet-300/70 uppercase tracking-widest mt-1.5">Companies Hiring</div>
                 </div>
-                {topFn && <>
-                  <div className="w-px h-10 bg-white/[0.08] hidden sm:block" />
+                {topFn && (
                   <div>
-                    <div className="text-4xl font-black text-white tracking-tight leading-none">{topFn.pct}%</div>
-                    <div className="text-xs font-semibold text-amber-300/70 uppercase tracking-widest mt-1 max-w-[120px] truncate">{topFn.name}</div>
+                    <div className="text-3xl font-black text-white tracking-tight leading-none">{topFn.pct}%</div>
+                    {/* Show only the first word of the function name to prevent truncation */}
+                    <div className="text-[10px] font-bold text-amber-300/70 uppercase tracking-widest mt-1.5 leading-tight">
+                      {topFn.name.split(" ")[0]} Field
+                    </div>
                   </div>
-                </>}
-                {trends.sample && (
-                  <p className="text-[10px] text-zinc-600 self-end ml-auto">
-                    Trends from {trends.sample.toLocaleString()} sampled profiles
-                  </p>
                 )}
               </div>
+              {trends.sample && (
+                <p className="text-[10px] text-zinc-700 mt-4">Trends from {trends.sample.toLocaleString()} sampled profiles</p>
+              )}
             </div>
 
             {/* ── Companies + Pathways ────────────────────────────────────── */}
@@ -651,72 +649,54 @@ function AlumniSection() {
 
               {/* Top Hiring Companies */}
               <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
-                <div className="px-5 pt-5 pb-3 border-b border-white/[0.06]">
+                <div className="px-5 pt-5 pb-4 border-b border-white/[0.07]">
                   <p className="text-sm font-bold text-white">Top Hiring Companies</p>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">Where alumni work most</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Where alumni currently work</p>
                 </div>
 
-                {/* #1 featured */}
-                {top1 && (
-                  <div className="px-5 py-4 border-b border-white/[0.06] flex items-center gap-4">
-                    <div className="relative">
-                      <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-amber-400 text-[8px] font-black text-black flex items-center justify-center z-10">1</span>
-                      <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden border border-white/20 shrink-0">
-                        <img src={`/api/logo?company=${encodeURIComponent(top1.name)}`} alt={top1.name}
-                          className="w-9 h-9 object-contain"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.display = "none";
-                            (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                              `<span style="font-size:18px;font-weight:900;color:#1e293b">${top1.name.trim()[0]?.toUpperCase()}</span>`;
-                          }} />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-white truncate">{top1.name}</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">{top1.count} alumni · {top1.pct}% of sample</p>
-                      <div className="mt-2 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                          style={{ width: "100%", transition: "width 0.8s ease" }} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 2–5 in a 2-col grid */}
-                <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
-                  {rest.map((co, i) => (
-                    <div key={co.name} className="bg-[#0d0d0f] px-4 py-3 flex items-center gap-3">
-                      <span className="text-xs font-bold text-zinc-600 w-4 shrink-0">{i + 2}</span>
-                      <div className="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center overflow-hidden shrink-0">
-                        <img src={`/api/logo?company=${encodeURIComponent(co.name)}`} alt={co.name}
-                          className="w-5 h-5 object-contain"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.display = "none";
-                            (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                              `<span style="font-size:10px;font-weight:900;color:#1e293b">${co.name.trim()[0]?.toUpperCase()}</span>`;
-                          }} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">{co.name}</p>
-                        <p className="text-[10px] text-zinc-500">{co.count} alumni</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 6–10 compact */}
-                {trends.top_companies.length > 5 && (
-                  <div className="px-5 py-3 border-t border-white/[0.06] space-y-2">
-                    {trends.top_companies.slice(5).map((co, i) => (
-                      <div key={co.name} className="flex items-center justify-between">
-                        <span className="text-xs text-zinc-500 truncate pr-2">
-                          <span className="text-zinc-700 tabular-nums mr-2">{i + 6}.</span>{co.name}
+                {/* Unified ranked list — all companies in one consistent style */}
+                <div className="divide-y divide-white/[0.05]">
+                  {trends.top_companies.map((co, i) => {
+                    const isTop3 = i < 3;
+                    const rankColors = ["#f59e0b", "#94a3b8", "#b45309"]; // gold, silver, bronze
+                    const rankColor = rankColors[i] ?? undefined;
+                    return (
+                      <div key={co.name} className={`flex items-center gap-3 px-5 ${isTop3 ? "py-3.5" : "py-2.5"} hover:bg-white/[0.03] transition-colors`}>
+                        {/* Rank */}
+                        <span className={`tabular-nums shrink-0 font-black ${isTop3 ? "text-sm w-5" : "text-xs w-5 text-zinc-600"}`}
+                          style={rankColor ? { color: rankColor } : {}}>
+                          {i + 1}
                         </span>
-                        <span className="text-[11px] font-semibold text-zinc-400 tabular-nums shrink-0">{co.count}</span>
+
+                        {/* Logo */}
+                        <div className={`rounded-lg bg-white/90 flex items-center justify-center overflow-hidden shrink-0 ${isTop3 ? "w-9 h-9" : "w-6 h-6"}`}>
+                          <img src={`/api/logo?company=${encodeURIComponent(co.name)}`} alt={co.name}
+                            className={`object-contain ${isTop3 ? "w-7 h-7" : "w-5 h-5"}`}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = "none";
+                              const sz = isTop3 ? 15 : 11;
+                              (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                                `<span style="font-size:${sz}px;font-weight:900;color:#1e293b">${co.name.trim()[0]?.toUpperCase()}</span>`;
+                            }} />
+                        </div>
+
+                        {/* Name + bar */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={`truncate font-semibold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-300"}`}>{co.name}</p>
+                            <span className={`tabular-nums shrink-0 font-bold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-400"}`}>{co.count}</span>
+                          </div>
+                          {isTop3 && (
+                            <div className="mt-1.5 h-1 rounded-full bg-white/[0.07] overflow-hidden">
+                              <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                                style={{ width: `${Math.max(co.pct * 4, 8)}%`, transition: "width 0.8s ease" }} />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Career Pathways — each row a unique color */}
