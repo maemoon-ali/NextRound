@@ -573,9 +573,9 @@ function AlumniSection() {
                 </div>
               )}
             </form>
-          </div>{/* /p-6 */}
-        )}{/* /expanded conditional */}
-      </div>{/* /outer card */}
+          </div>
+        )}
+      </div>
 
       {/* ── Error ────────────────────────────────────────────────────────── */}
       {error && (
