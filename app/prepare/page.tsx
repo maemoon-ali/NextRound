@@ -413,10 +413,12 @@ function MatchInfoCard({ reasons, score }: { reasons: string[]; score: number })
 // ── Alumni Section ────────────────────────────────────────────────────────────
 interface AlumnusPerson {
   id: string;
+  display_name: string | null;
   current_title: string;
   current_company: string;
   current_location: string;
   current_function: string;
+  current_level: string;
   job_history_summary: string;
   linkedin_url: string | null;
 }
@@ -770,51 +772,79 @@ function AlumniSection() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {alumni.slice(0, 9).map((person, idx) => {
                 const color = personColors[idx % personColors.length];
-                const initials = [person.current_title, person.current_company]
-                  .map(s => s?.trim()[0]?.toUpperCase() ?? "")
-                  .filter(Boolean).join("").slice(0, 2) || "?";
+                // Use real name for initials; fall back to company initial only
+                const nameParts = (person.display_name ?? "").trim().split(/\s+/).filter(Boolean);
+                const initials = nameParts.length >= 2
+                  ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+                  : nameParts.length === 1
+                    ? nameParts[0].slice(0, 2).toUpperCase()
+                    : (person.current_company?.trim()[0] ?? "?").toUpperCase();
+                const displayName = person.display_name?.trim() || null;
+                // Shorten long function labels for chip
+                const fnShort = person.current_function.split(" & ")[0];
+
                 return (
-                  <div key={person.id}
-                    className="rounded-2xl border bg-white/[0.03] overflow-hidden hover:bg-white/[0.06] transition-all duration-200"
-                    style={{ borderColor: `${color}25` }}>
-                    {/* Colored top bar */}
-                    <div className="h-1 w-full" style={{ background: color }} />
+                  <div
+                    key={person.id}
+                    className="rounded-2xl border bg-white/[0.03] overflow-hidden transition-all duration-200 cursor-pointer group"
+                    style={{ borderColor: `${color}20` }}
+                    onClick={() => { if (person.linkedin_url) window.open(person.linkedin_url, "_blank", "noopener,noreferrer"); }}
+                    title={person.linkedin_url ? "Open LinkedIn profile" : undefined}
+                  >
+                    {/* Colored top stripe */}
+                    <div className="h-[3px] w-full transition-opacity duration-200 group-hover:opacity-100 opacity-70"
+                      style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+
                     <div className="p-4">
-                      {/* Avatar + name row */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-sm font-black"
-                          style={{ background: `${color}20`, color }}>
+                      {/* Avatar + name/title block */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-black select-none"
+                          style={{ background: `${color}22`, color, border: `1.5px solid ${color}35` }}>
                           {initials}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-white leading-tight truncate">{person.current_title}</p>
-                          <p className="text-xs font-semibold mt-0.5 truncate" style={{ color }}>{person.current_company}</p>
+                          {/* Real name (if available) */}
+                          {displayName && (
+                            <p className="text-[13px] font-bold text-white leading-tight truncate">{displayName}</p>
+                          )}
+                          {/* Job title */}
+                          <p className={`leading-snug truncate ${displayName ? "text-[11px] text-zinc-400 mt-0.5" : "text-sm font-bold text-white"}`}>
+                            {person.current_title}
+                          </p>
+                          {/* Company in accent color */}
+                          <p className="text-xs font-semibold mt-0.5 truncate" style={{ color }}>
+                            {person.current_company}
+                          </p>
                         </div>
                       </div>
-                      {/* Meta row */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {person.current_location && (
-                          <span className="text-[11px] text-zinc-500 flex items-center gap-1">
-                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                            {person.current_location}
+
+                      {/* Tags row: function + location */}
+                      <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                        {fnShort && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border"
+                            style={{ background: `${color}12`, borderColor: `${color}28`, color: `${color}cc` }}>
+                            {fnShort}
                           </span>
                         )}
-                        {person.current_function && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{ background: `${color}18`, color: `${color}cc` }}>
-                            {person.current_function.split(" & ")[0].split(" ")[0]}
+                        {person.current_location && (
+                          <span className="text-[10px] text-zinc-500 flex items-center gap-0.5">
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                              <circle cx="12" cy="9" r="2.5"/>
+                            </svg>
+                            <span className="truncate max-w-[130px]">{person.current_location}</span>
                           </span>
                         )}
                       </div>
-                      {/* LinkedIn */}
+
+                      {/* LinkedIn — original style */}
                       {person.linkedin_url && (
-                        <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
-                          className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-blue-400 transition-colors">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 group-hover:text-blue-400 transition-colors duration-150">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
                             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                           </svg>
-                          LinkedIn →
-                        </a>
+                          View profile
+                        </div>
                       )}
                     </div>
                   </div>

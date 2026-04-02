@@ -106,6 +106,7 @@ export async function GET(request: Request) {
     // ── Individual alumni cards (first 24) ────────────────────────────────
     const alumni = people.slice(0, 24).map((p) => ({
       id: p.id,
+      display_name:     p.display_name ?? null,
       current_title:    p.current_position.title,
       current_company:  p.current_position.company.name,
       current_location: p.current_position.location ?? "",
