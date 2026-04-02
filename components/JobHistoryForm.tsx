@@ -498,6 +498,9 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
   const [linkedinStatus, setLinkedinStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [linkedinError,  setLinkedinError]  = useState<string | null>(null);
 
+  // ── Manual entry visibility — hidden until user clicks or import succeeds ───
+  const [showManual, setShowManual] = useState(false);
+
   // ── Education helpers ───────────────────────────────────────────────────────
   function addSchool() {
     if (eduEntries.length >= MAX_SCHOOLS) return;
@@ -582,6 +585,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
       setStartYears(jobs.map(() => ""));
       setFieldErrors(jobs.map(() => new Set<string>()));
       setUploadStatus("done"); setValidationError(null);
+      setShowManual(true);
     } catch {
       setUploadError("Upload failed. Please try again.");
       setUploadStatus("error");
@@ -614,6 +618,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
         setShowEducation(true);
       }
       setLinkedinStatus("done"); setValidationError(null); setUploadStatus("idle");
+      setShowManual(true);
     } catch {
       setLinkedinError("Import failed. Please try again.");
       setLinkedinStatus("error");
@@ -690,8 +695,31 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
         {linkedinError && <p className="text-amber-400 text-sm" role="alert">{linkedinError}</p>}
       </div>
 
-      {/* ── JOB HISTORY ──────────────────────────────────────────────────────── */}
-      <>
+      {/* ── "Enter manually" reveal button — shown until manual entry is open ─── */}
+      {!showManual && (
+        <button
+          type="button"
+          onClick={() => setShowManual(true)}
+          className="group flex items-center gap-2.5 text-sm text-zinc-400 hover:text-emerald-300 transition-colors duration-200"
+        >
+          <span className="flex items-center justify-center w-7 h-7 rounded-lg border border-zinc-700 bg-zinc-800/60 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/10 transition-all duration-200">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </span>
+          Enter job history manually
+        </button>
+      )}
+
+      {/* ── JOB HISTORY — animates open with grid-template-rows ──────────────── */}
+      <div style={{
+        display: "grid",
+        gridTemplateRows: showManual ? "1fr" : "0fr",
+        transition: "grid-template-rows 0.42s cubic-bezier(0.16,1,0.3,1)",
+      }}>
+      <div style={{ overflow: "hidden" }}>
+      <div className="space-y-3 pt-1">
           {/* Section header */}
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
@@ -941,13 +969,14 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
             </div>
             </div>
 
-            {/* Submit — sits directly below education, moves with it */}
-            <LiquidButton type="submit" disabled={loading} size="default" className="text-white font-medium w-fit">
-              {loading ? "Matching…" : "Find similar roles & start practice"}
-            </LiquidButton>
-
           </div>{/* end bottom actions block */}
-        </>
+      </div>{/* end overflow:hidden */}
+      </div>{/* end grid animation wrapper */}
+
+      {/* Submit — always visible */}
+      <LiquidButton type="submit" disabled={loading} size="default" className="text-white font-medium w-fit">
+        {loading ? "Matching…" : "Find similar roles & start practice"}
+      </LiquidButton>
     </form>
   );
 }
