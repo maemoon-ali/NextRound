@@ -150,18 +150,39 @@ export async function GET(request: Request) {
 
     const seniorPct = Math.round((seniorCount / people.length) * 100);
 
-    // ── Surge companies: aggregate recent-hire sample by company ──────────
-    const surgeCounts = new Map<string, number>();
+    // ── Surge companies: find jobs that ACTUALLY started recently ────────
+    // For each person returned by the date-filtered query, walk their jobs
+    // (current first, then history) and find the one that started within
+    // the surge window.  Using current_position alone was inaccurate because
+    // many people have already moved on from the recently-started role.
+    const surgeCounts  = new Map<string, number>();
+    const surgeDomains = new Map<string, string>();
+
     for (const p of surgeResult.people) {
-      const co = p.current_position.company.name?.trim();
-      if (co && !isEduInstitution(co)) {
-        surgeCounts.set(co, (surgeCounts.get(co) ?? 0) + 1);
+      const allJobs = [p.current_position, ...p.job_history];
+      for (const job of allJobs) {
+        const startedAt = job.started_at ?? "";
+        // Skip the default fallback date injected when the real date is unknown
+        if (!startedAt || startedAt.startsWith("2020-01-01")) continue;
+        // Only count if within the surge window
+        if (startedAt < surgeDateFrom) continue;
+        const coName = job.company.name?.trim();
+        if (!coName || isEduInstitution(coName)) continue;
+        surgeCounts.set(coName, (surgeCounts.get(coName) ?? 0) + 1);
+        if (!surgeDomains.has(coName) && job.company.domain) {
+          surgeDomains.set(coName, job.company.domain);
+        }
+        break; // count each person at most once (their most-recent surge job)
       }
     }
     const surge_companies = [...surgeCounts.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
-      .map(([name, recent_count]) => ({ name, recent_count }));
+      .map(([name, recent_count]) => ({
+        name,
+        recent_count,
+        domain: surgeDomains.get(name) ?? null,
+      }));
 
     // ── Alumni profile cards ───────────────────────────────────────────────
     const alumni = people.slice(0, 24).map((p) => ({

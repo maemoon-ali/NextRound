@@ -426,7 +426,7 @@ interface AlumniTrends {
   top_companies:   { name: string; count: number; pct: number }[];
   top_functions:   { name: string; count: number; pct: number }[];
   top_locations?:  { name: string; count: number }[];
-  surge_companies?: { name: string; recent_count: number }[];
+  surge_companies?: { name: string; recent_count: number; domain: string | null }[];
   total:       number;
   sample?:     number;
   senior_pct?: number;
@@ -659,7 +659,7 @@ function AlumniSection() {
                 {[
                   { value: trends.total.toLocaleString(), label: "Alumni in Dataset",  color: "#60a5fa" },
                   { value: `${trends.senior_pct ?? "—"}%`, label: "In Senior+ Roles", color: "#34d399" },
-                  { value: String(trends.top_companies.length), label: "Companies Hiring", color: "#a78bfa" },
+                  trends.top_locations?.[0] ? { value: trends.top_locations[0].name, label: "Top Location", color: "#a78bfa" } : null,
                   topFn ? { value: `${topFn.pct}%`, label: topFn.name.split(" & ")[0], color: "#f59e0b" } : null,
                 ].filter(Boolean).map((stat) => (
                   <div key={stat!.label} className="px-6 py-5">
@@ -782,7 +782,7 @@ function AlumniSection() {
               const surgeList: { name: string; recent_count: number }[] =
                 (trends.surge_companies && trends.surge_companies.length > 0)
                   ? trends.surge_companies
-                  : trends.top_companies.slice(0, 6).map((co: { name: string; count: number }) => ({ name: co.name, recent_count: co.count }));
+                  : trends.top_companies.slice(0, 6).map((co: { name: string; count: number }) => ({ name: co.name, recent_count: co.count, domain: null }));
               const surgeAccentColors = ["#34d399", "#60a5fa", "#a78bfa", "#f472b6", "#fb923c", "#f59e0b"];
               return (
                 <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
@@ -798,7 +798,10 @@ function AlumniSection() {
                   </div>
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {surgeList.map((co, i) => {
-                      const jobsUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.name)}&f_TPR=r604800`;
+                      // Link to company careers page if domain known, else Google search
+                      const jobsUrl = co.domain
+                        ? `https://${co.domain}/careers`
+                        : `https://www.google.com/search?q=${encodeURIComponent(co.name + " careers jobs")}`;
                       const accentColor = surgeAccentColors[i % surgeAccentColors.length];
                       return (
                         <a
@@ -860,123 +863,107 @@ function AlumniSection() {
             })()}
 
             {/* ── Alumni Profiles ─────────────────────────────────────────── */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-white">Alumni Profiles</p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">{searchedSchool}{searchedMajor ? ` · ${searchedMajor}` : ""}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {alumni.slice(0, 9).map((person, idx) => {
-                // Color by job function, not index
-                const fnColorMap: Record<string, string> = {
-                  "Engineering & Infrastructure": "#60a5fa",
-                  "Product & Design":             "#a78bfa",
-                  "Sales & Business Dev":         "#f472b6",
-                  "Marketing & Growth":           "#34d399",
-                  "Operations & Strategy":        "#fb923c",
-                  "Finance & Administration":     "#f59e0b",
-                  "Data Science & Research":      "#06b6d4",
-                  "Customer Success":             "#4ade80",
-                  "Legal & Compliance":           "#e879f9",
-                  "People & HR":                  "#a3e635",
-                };
-                const color = fnColorMap[person.current_function] ?? personColors[idx % personColors.length];
-                // Use real name for initials; fall back to company initial only
-                const nameParts = (person.display_name ?? "").trim().split(/\s+/).filter(Boolean);
-                const initials = nameParts.length >= 2
-                  ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
-                  : nameParts.length === 1
-                    ? nameParts[0].slice(0, 2).toUpperCase()
-                    : (person.current_company?.trim()[0] ?? "?").toUpperCase();
-                const displayName = person.display_name?.trim() || null;
-                // Shorten long function labels for chip
-                const fnShort = person.current_function.split(" & ")[0];
-
-                return (
-                  <div
-                    key={person.id}
-                    className="rounded-lg border bg-white/[0.03] overflow-hidden transition-all duration-200 cursor-pointer group"
-                    style={{ borderColor: `${color}20` }}
-                    onClick={() => { if (person.linkedin_url) window.open(person.linkedin_url, "_blank", "noopener,noreferrer"); }}
-                    title={person.linkedin_url ? "Open LinkedIn profile" : undefined}
-                  >
-                    {/* Colored top stripe */}
-                    <div className="h-[3px] w-full transition-opacity duration-200 group-hover:opacity-100 opacity-70"
-                      style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
-
-                    <div className="p-4">
-                      {/* Avatar + name/title block */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-sm font-black select-none bg-white"
-                          style={{ color, borderRadius: 0 }}>
-                          {initials}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          {/* Real name (if available) */}
-                          {displayName && (
-                            <p className="text-[13px] font-bold text-white leading-tight truncate">{displayName}</p>
-                          )}
-                          {/* Job title */}
-                          <p className={`leading-snug truncate ${displayName ? "text-[11px] text-zinc-400 mt-0.5" : "text-sm font-bold text-white"}`}>
-                            {person.current_title}
-                          </p>
-                          {/* Company in accent color */}
-                          <p className="text-xs font-semibold mt-0.5 truncate" style={{ color }}>
-                            {person.current_company}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Tags row: function + location */}
-                      <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                        {fnShort && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border"
-                            style={{ background: `${color}12`, borderColor: `${color}28`, color: `${color}cc` }}>
-                            {fnShort}
-                          </span>
-                        )}
-                        {person.current_location && (
-                          <span className="text-[10px] text-zinc-500 flex items-center gap-0.5">
-                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
-                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-                              <circle cx="12" cy="9" r="2.5"/>
-                            </svg>
-                            <span className="truncate max-w-[130px]">{person.current_location}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* LinkedIn — original style */}
-                      {person.linkedin_url && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 group-hover:text-blue-400 transition-colors duration-150">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
-                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                          </svg>
-                          View profile
-                        </div>
-                      )}
+            {(() => {
+              const fnColorMap: Record<string, string> = {
+                "Engineering & Infrastructure": "#60a5fa",
+                "Product & Design":             "#a78bfa",
+                "Sales & Business Dev":         "#f472b6",
+                "Marketing & Growth":           "#34d399",
+                "Operations & Strategy":        "#fb923c",
+                "Finance & Administration":     "#f59e0b",
+                "Data Science & Research":      "#06b6d4",
+                "Customer Success":             "#4ade80",
+                "Legal & Compliance":           "#e879f9",
+                "People & HR":                  "#a3e635",
+              };
+              return (
+                <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
+                  {/* Header */}
+                  <div className="px-5 pt-5 pb-4 border-b border-white/[0.07] flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-white">Alumni Profiles</p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">{searchedSchool}{searchedMajor ? ` · ${searchedMajor}` : ""}</p>
                     </div>
+                    {alumni.length > 12 && (
+                      <button type="button" onClick={() => setShowAllAlumni(true)}
+                        className="text-xs font-bold text-zinc-400 hover:text-white border border-white/[0.10] hover:border-white/[0.22] bg-white/[0.04] hover:bg-white/[0.09] px-3 py-1.5 rounded-lg transition-all">
+                        View all {alumni.length}
+                      </button>
+                    )}
                   </div>
-                );
-              })}
-            </div>
 
-            {/* View all button */}
-            {alumni.length > 9 && (
-              <div className="flex justify-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowAllAlumni(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border border-white/[0.12] bg-white/[0.05] text-zinc-300 hover:bg-white/[0.10] hover:text-white hover:border-white/[0.20] transition-all duration-200"
-                >
-                  View all {alumni.length} profiles
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M13 6l6 6-6 6"/>
-                  </svg>
-                </button>
-              </div>
-            )}
+                  {/* List rows */}
+                  <div className="divide-y divide-white/[0.04]">
+                    {alumni.slice(0, 12).map((person, idx) => {
+                      const color = fnColorMap[person.current_function] ?? personColors[idx % personColors.length];
+                      const nameParts = (person.display_name ?? "").trim().split(/\s+/).filter(Boolean);
+                      const initials = nameParts.length >= 2
+                        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+                        : nameParts.length === 1
+                          ? nameParts[0].slice(0, 2).toUpperCase()
+                          : (person.current_company?.trim()[0] ?? "?").toUpperCase();
+                      const displayName = person.display_name?.trim() || null;
+                      const fnShort = person.current_function.split(" & ")[0];
+                      const city = person.current_location?.split(",").slice(-1)[0]?.trim() ?? "";
+
+                      return (
+                        <div
+                          key={person.id}
+                          className="flex items-center gap-0 hover:bg-white/[0.03] transition-colors duration-100 cursor-pointer group"
+                          onClick={() => { if (person.linkedin_url) window.open(person.linkedin_url, "_blank", "noopener,noreferrer"); }}
+                        >
+                          {/* Left color accent bar */}
+                          <div className="w-[3px] self-stretch shrink-0" style={{ background: color }} />
+
+                          {/* Content */}
+                          <div className="flex items-center gap-3.5 px-4 py-3 flex-1 min-w-0">
+                            {/* Avatar */}
+                            <div className="w-9 h-9 flex items-center justify-center shrink-0 text-[11px] font-black select-none bg-white"
+                              style={{ color, borderRadius: 0 }}>
+                              {initials}
+                            </div>
+
+                            {/* Name + title + company */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline gap-1.5 min-w-0">
+                                {displayName
+                                  ? <span className="text-[13px] font-bold text-white truncate">{displayName}</span>
+                                  : <span className="text-[13px] font-bold text-white truncate">{person.current_title}</span>
+                                }
+                                {displayName && (
+                                  <span className="text-[11px] text-zinc-500 truncate hidden sm:inline">{person.current_title}</span>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-semibold truncate mt-0.5" style={{ color }}>{person.current_company}</p>
+                            </div>
+
+                            {/* Right: function chip + city + LinkedIn icon */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {fnShort && (
+                                <span className="hidden md:inline text-[10px] font-semibold px-2 py-[3px] rounded border whitespace-nowrap"
+                                  style={{ background: `${color}10`, borderColor: `${color}22`, color: `${color}bb` }}>
+                                  {fnShort}
+                                </span>
+                              )}
+                              {city && (
+                                <span className="hidden lg:inline text-[10px] text-zinc-600 whitespace-nowrap max-w-[90px] truncate">{city}</span>
+                              )}
+                              {person.linkedin_url && (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
+                                  className="text-zinc-600 group-hover:text-blue-400 transition-colors shrink-0">
+                                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
 
             {/* ── All Profiles Modal — rendered via portal so it covers the app header ── */}
             {showAllAlumni && typeof document !== "undefined" && createPortal(
@@ -1092,7 +1079,8 @@ function AlumniSection() {
                         <span className="text-[11px] text-zinc-600">{filteredAlumni.length} profile{filteredAlumni.length !== 1 ? "s" : ""}</span>
                       </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {/* List rows — same style as main section */}
+                  <div className="rounded-xl border border-white/[0.08] overflow-hidden divide-y divide-white/[0.04]">
                     {filteredAlumni.map((person, idx) => {
                       const color = fnColorMap[person.current_function] ?? personColors[idx % personColors.length];
                       const nameParts = (person.display_name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -1103,67 +1091,54 @@ function AlumniSection() {
                           : (person.current_company?.trim()[0] ?? "?").toUpperCase();
                       const displayName = person.display_name?.trim() || null;
                       const fnShort = person.current_function.split(" & ")[0];
+                      const city = person.current_location?.split(",").slice(-1)[0]?.trim() ?? "";
 
                       return (
                         <div
                           key={person.id}
-                          className="rounded-xl border overflow-hidden transition-all duration-150 cursor-pointer group hover:scale-[1.01]"
-                          style={{
-                            background: "rgba(255,255,255,0.03)",
-                            borderColor: `${color}25`,
-                          }}
+                          className="flex items-center gap-0 hover:bg-white/[0.03] transition-colors duration-100 cursor-pointer group"
                           onClick={() => { if (person.linkedin_url) window.open(person.linkedin_url, "_blank", "noopener,noreferrer"); }}
                         >
-                          {/* Color bar */}
-                          <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}55)` }} />
-
-                          <div className="p-4">
-                            {/* Avatar row */}
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-11 h-11 flex items-center justify-center shrink-0 text-[13px] font-black select-none bg-white"
-                                style={{ color, borderRadius: 0 }}>
-                                {initials}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                {displayName && (
-                                  <p className="text-[13px] font-bold text-white leading-tight truncate">{displayName}</p>
-                                )}
-                                <p className={`truncate leading-snug ${displayName ? "text-[11px] text-zinc-400 mt-0.5" : "text-sm font-bold text-white"}`}>
-                                  {person.current_title}
-                                </p>
-                                <p className="text-xs font-semibold truncate mt-0.5" style={{ color }}>
-                                  {person.current_company}
-                                </p>
-                              </div>
+                          <div className="w-[3px] self-stretch shrink-0" style={{ background: color }} />
+                          <div className="flex items-center gap-3.5 px-4 py-3 flex-1 min-w-0">
+                            <div className="w-9 h-9 flex items-center justify-center shrink-0 text-[11px] font-black select-none bg-white"
+                              style={{ color, borderRadius: 0 }}>
+                              {initials}
                             </div>
-
-                            {/* Function badge + location */}
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline gap-1.5 min-w-0">
+                                {displayName
+                                  ? <span className="text-[13px] font-bold text-white truncate">{displayName}</span>
+                                  : <span className="text-[13px] font-bold text-white truncate">{person.current_title}</span>
+                                }
+                                {displayName && (
+                                  <span className="text-[11px] text-zinc-500 truncate">{person.current_title}</span>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-semibold truncate mt-0.5" style={{ color }}>{person.current_company}</p>
+                            </div>
+                            <div className="flex items-center gap-2.5 shrink-0">
                               {fnShort && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide"
-                                  style={{ background: `${color}15`, borderColor: `${color}30`, color }}>
+                                <span className="text-[10px] font-semibold px-2 py-[3px] rounded border whitespace-nowrap"
+                                  style={{ background: `${color}10`, borderColor: `${color}22`, color: `${color}bb` }}>
                                   {fnShort}
                                 </span>
                               )}
-                              {person.current_location && (
-                                <span className="text-[10px] text-zinc-600 truncate">{person.current_location}</span>
+                              {city && (
+                                <span className="hidden sm:inline text-[10px] text-zinc-600 whitespace-nowrap max-w-[110px] truncate">{city}</span>
                               )}
-                            </div>
-
-                            {/* LinkedIn */}
-                            {person.linkedin_url && (
-                              <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center gap-1.5 text-[11px] text-zinc-600 group-hover:text-[#60a5fa] transition-colors">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                              {person.linkedin_url && (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"
+                                  className="text-zinc-600 group-hover:text-blue-400 transition-colors shrink-0">
                                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                                 </svg>
-                                View profile
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
                     })}
-                  </div>{/* /grid */}
+                  </div>
                       </>
                     );
                   })()}
