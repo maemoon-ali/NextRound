@@ -3,25 +3,37 @@
 import { useState, useRef, useEffect } from "react";
 import { UNIVERSITY_NAMES, getSchoolDomain } from "@/lib/us-universities";
 
-function DropdownSchoolIcon({ domain }: { domain: string }) {
-  const [src, setSrc] = useState<"clearbit" | "favicon" | "none">("clearbit");
-  if (src === "none") return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      style={{ color: "var(--pg-text-muted)", flexShrink: 0 }}>
-      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-    </svg>
-  );
-  const imgSrc = src === "clearbit"
-    ? `https://logo.clearbit.com/${domain}`
-    : `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+function SchoolLogo({ domain, name }: { domain: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const initial = name.trim()[0]?.toUpperCase() ?? "U";
+
+  if (failed || !domain) {
+    return (
+      <div style={{
+        width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+        background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.25)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 10, fontWeight: 800, color: "rgba(96,165,250,0.8)",
+      }}>
+        {initial}
+      </div>
+    );
+  }
+
   return (
-    <img
-      src={imgSrc}
-      alt=""
-      aria-hidden
-      onError={() => setSrc(src === "clearbit" ? "favicon" : "none")}
-      style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0, borderRadius: 3 }}
-    />
+    <div style={{
+      width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+      background: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.15)",
+      display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+    }}>
+      <img
+        src={`/api/logo?company=${encodeURIComponent(name)}`}
+        alt=""
+        aria-hidden
+        onError={() => setFailed(true)}
+        style={{ width: 16, height: 16, objectFit: "contain" }}
+      />
+    </div>
   );
 }
 
@@ -38,11 +50,15 @@ export function SchoolInput({
 }) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function handleOut(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleOut);
     return () => document.removeEventListener("mousedown", handleOut);
@@ -50,11 +66,13 @@ export function SchoolInput({
 
   function handleChange(text: string) {
     onChange(text);
+    setActiveIdx(-1);
     if (text.trim().length >= 1) {
       const q = text.toLowerCase();
-      const filtered = UNIVERSITY_NAMES.filter(
-        (u) => u.toLowerCase().startsWith(q) || u.toLowerCase().includes(q)
-      ).slice(0, 5);
+      // Prioritize starts-with matches, then contains
+      const startsWith = UNIVERSITY_NAMES.filter(u => u.toLowerCase().startsWith(q));
+      const contains   = UNIVERSITY_NAMES.filter(u => !u.toLowerCase().startsWith(q) && u.toLowerCase().includes(q));
+      const filtered   = [...startsWith, ...contains].slice(0, 6);
       setSuggestions(filtered);
       setOpen(filtered.length > 0);
     } else {
@@ -67,53 +85,107 @@ export function SchoolInput({
     onChange(school);
     setOpen(false);
     setSuggestions([]);
+    setActiveIdx(-1);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!open) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx(i => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx(i => Math.max(i - 1, -1));
+    } else if (e.key === "Enter" && activeIdx >= 0) {
+      e.preventDefault();
+      select(suggestions[activeIdx]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} style={{ position: "relative" }}>
       <input
+        ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => { if (suggestions.length > 0) setOpen(true); }}
+        onKeyDown={handleKeyDown}
         className={className}
         placeholder={placeholder}
         autoComplete="off"
+        aria-autocomplete="list"
+        aria-expanded={open}
       />
+
       {open && suggestions.length > 0 && (
         <div
-          className="absolute z-50 w-full mt-1 rounded-xl shadow-2xl overflow-hidden"
           style={{
-            background: "var(--pg-glass)",
-            border: "1px solid var(--pg-glass-border)",
-            backdropFilter: "blur(16px)",
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            borderRadius: 14,
+            overflow: "hidden",
+            background: "rgba(15,15,20,0.97)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4)",
           }}
         >
-          {suggestions.map((school) => {
+          {/* Header */}
+          <div style={{
+            padding: "8px 14px 6px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+            textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+          }}>
+            Schools
+          </div>
+
+          {suggestions.map((school, i) => {
             const q = value.toLowerCase();
             const low = school.toLowerCase();
             const idx = low.indexOf(q);
             const domain = getSchoolDomain(school);
+            const isActive = i === activeIdx;
+
             return (
               <button
                 key={school}
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); select(school); }}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-blue-500/15 transition-colors duration-100 flex items-center gap-2.5"
-                style={{ color: "var(--pg-text)" }}
+                onMouseEnter={() => setActiveIdx(i)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "10px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  background: isActive ? "rgba(96,165,250,0.10)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "background 0.1s",
+                  borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}
               >
-                {domain ? (
-                  <DropdownSchoolIcon domain={domain} />
-                ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    style={{ color: "var(--pg-text-muted)", flexShrink: 0 }}>
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                  </svg>
-                )}
-                <span>
-                  {idx >= 0
-                    ? (<>{school.slice(0, idx)}<span className="text-blue-400 font-medium">{school.slice(idx, idx + q.length)}</span>{school.slice(idx + q.length)}</>)
-                    : school}
+                <SchoolLogo domain={domain ?? ""} name={school} />
+
+                <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.88)" }}>
+                  {idx >= 0 ? (
+                    <>
+                      {school.slice(0, idx)}
+                      <span style={{ color: "#60a5fa", fontWeight: 700 }}>
+                        {school.slice(idx, idx + q.length)}
+                      </span>
+                      {school.slice(idx + q.length)}
+                    </>
+                  ) : school}
                 </span>
               </button>
             );

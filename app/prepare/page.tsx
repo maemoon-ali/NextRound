@@ -470,41 +470,73 @@ function AlumniSection() {
     <section className="space-y-4">
 
       {/* ── Dashboard header ─────────────────────────────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden backdrop-blur-2xl border p-6"
+      {/* NOTE: no overflow-hidden here so the school dropdown isn't clipped */}
+      <div className="relative rounded-2xl backdrop-blur-2xl border p-6"
         style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "var(--pg-glass-shadow)" }}>
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+        {/* Top highlight line — inset so it doesn't need overflow-hidden */}
+        <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
 
-        {/* Title row */}
-        <div className="flex items-start justify-between mb-5">
+        {/* Title + badge */}
+        <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">College Network</h2>
-            <p className="text-sm text-white/45 mt-1 max-w-xs leading-snug">
-              Track where alumni land and which companies recruit most from your school.
+            <p className="text-sm text-white/45 mt-1 leading-snug">
+              See where alumni from your school work and what companies recruit them most.
             </p>
           </div>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 tracking-wider uppercase shrink-0">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 tracking-wider uppercase shrink-0 ml-4">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Live Data
           </span>
         </div>
 
-        {/* Inputs */}
-        <form onSubmit={handleSubmit} className="space-y-2">
-          <SchoolInput
-            value={school}
-            onChange={setSchool}
-            placeholder="School — e.g. MIT, Stanford, University of Michigan"
-            className="w-full rounded-xl px-4 py-2.5 text-sm text-white border border-white/[0.12] bg-white/[0.06] placeholder-zinc-500 focus:outline-none focus:border-blue-500/60 transition-colors"
-          />
-          <div className="flex gap-2">
-            <input type="text" value={major} onChange={(e) => setMajor(e.target.value)}
-              placeholder="Major (optional) — e.g. Computer Science, Finance"
-              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white border border-white/[0.12] bg-white/[0.06] placeholder-zinc-500 focus:outline-none focus:border-blue-500/60 transition-colors" />
-            <button type="submit" disabled={loading || !school.trim()}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 shrink-0">
-              {loading ? "Searching…" : "Search"}
+        {/* Search form */}
+        <form onSubmit={handleSubmit}>
+          {/* School input — full width, large */}
+          <div className="mb-3">
+            <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">School</label>
+            <SchoolInput
+              value={school}
+              onChange={setSchool}
+              placeholder="e.g. MIT, Stanford, University of Michigan…"
+              className="w-full rounded-xl px-4 py-3 text-sm font-medium text-white border border-white/[0.14] bg-white/[0.07] placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.10] transition-all"
+            />
+          </div>
+
+          {/* Major + button row */}
+          <div className="flex gap-2.5 items-end">
+            <div className="flex-1">
+              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Major <span className="text-zinc-700 normal-case font-normal">— optional</span></label>
+              <input
+                type="text"
+                value={major}
+                onChange={(e) => setMajor(e.target.value)}
+                placeholder="e.g. Computer Science, Finance, Economics…"
+                className="w-full rounded-xl px-4 py-3 text-sm font-medium text-white border border-white/[0.14] bg-white/[0.07] placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.10] transition-all"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !school.trim()}
+              className="px-6 py-3 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150 shrink-0 shadow-[0_0_20px_rgba(59,130,246,0.35)]"
+            >
+              {loading ? "Searching…" : "Search →"}
             </button>
           </div>
+
+          {/* Quick picks */}
+          {!school && (
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className="text-[11px] text-zinc-600">Quick:</span>
+              {["MIT", "Stanford", "Harvard", "UC Berkeley", "Carnegie Mellon"].map((s) => (
+                <button key={s} type="button"
+                  onClick={() => setSchool(s)}
+                  className="text-[11px] px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:text-white hover:border-white/[0.16] transition-all">
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </form>
       </div>
 
