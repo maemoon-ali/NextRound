@@ -441,6 +441,9 @@ function AlumniSection() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [formExpanded, setFormExpanded] = useState(true);
+  const [showAllAlumni, setShowAllAlumni] = useState(false);
+  const [modalFilterFn, setModalFilterFn] = useState<string>("all");
+  const [modalDropdownOpen, setModalDropdownOpen] = useState(false);
 
   async function search() {
     if (!school.trim()) return;
@@ -478,32 +481,47 @@ function AlumniSection() {
         style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "var(--pg-glass-shadow)" }}>
         <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
 
-        {/* ── COMPACT state — shown after a successful search ── */}
-        {!formExpanded && searchedSchool ? (
-          <div className="flex items-center justify-between px-5 py-3.5">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="flex items-center gap-1.5 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">Live</span>
-              </span>
-              <span className="w-px h-4 bg-white/[0.10]" />
-              <span className="text-sm font-bold text-white truncate">{searchedSchool}</span>
-              {searchedMajor && (
-                <span className="text-[11px] px-2 py-0.5 rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-300 font-semibold shrink-0">
-                  {searchedMajor}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setFormExpanded(true)}
-              className="ml-4 px-4 py-1.5 rounded-lg text-xs font-bold border border-white/[0.12] bg-white/[0.06] text-zinc-300 hover:bg-white/[0.12] hover:text-white transition-all shrink-0"
+        {/* ── COMPACT state — animates in/out with grid-template-rows trick ── */}
+        <div style={{
+          display: "grid",
+          gridTemplateRows: (!formExpanded && searchedSchool) ? "1fr" : "0fr",
+          transition: "grid-template-rows 0.4s cubic-bezier(0.16,1,0.3,1)",
+        }}>
+          <div style={{ overflow: "hidden" }}>
+            <div
+              className="flex items-center justify-between px-5 py-3.5"
+              style={{
+                opacity: (!formExpanded && searchedSchool) ? 1 : 0,
+                transform: (!formExpanded && searchedSchool) ? "translateY(0)" : "translateY(-6px)",
+                transition: "opacity 0.3s ease 0.1s, transform 0.3s cubic-bezier(0.16,1,0.3,1) 0.1s",
+              }}
             >
-              Search again
-            </button>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">Live</span>
+                </span>
+                <span className="w-px h-4 bg-white/[0.10]" />
+                <span className="text-sm font-bold text-white truncate">{searchedSchool}</span>
+                {searchedMajor && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-300 font-semibold shrink-0">
+                    {searchedMajor}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormExpanded(true)}
+                className="ml-4 px-4 py-1.5 rounded-lg text-xs font-bold border border-white/[0.12] bg-white/[0.06] text-zinc-300 hover:bg-white/[0.12] hover:text-white transition-all shrink-0"
+              >
+                Search again
+              </button>
+            </div>
           </div>
-        ) : (
-          /* ── EXPANDED state — initial or after "Search again" ── */
+        </div>
+
+        {/* ── EXPANDED state — no overflow:hidden so dropdown isn't clipped ── */}
+        {(formExpanded || !searchedSchool) && (
           <div className="p-6">
             {/* Title + badge */}
             <div className="flex items-start justify-between mb-6">
@@ -555,9 +573,9 @@ function AlumniSection() {
                 </div>
               )}
             </form>
-          </div>
-        )}
-      </div>
+          </div>{/* /p-6 */}
+        )}{/* /expanded conditional */}
+      </div>{/* /outer card */}
 
       {/* ── Error ────────────────────────────────────────────────────────── */}
       {error && (
@@ -683,7 +701,7 @@ function AlumniSection() {
                         </span>
 
                         {/* Logo */}
-                        <div className={`rounded-lg bg-white/90 flex items-center justify-center overflow-hidden shrink-0 ${isTop3 ? "w-9 h-9" : "w-6 h-6"}`}>
+                        <div className={`bg-white flex items-center justify-center overflow-hidden shrink-0 ${isTop3 ? "w-9 h-9" : "w-6 h-6"}`} style={{ borderRadius: 0 }}>
                           <img src={`/api/logo?company=${encodeURIComponent(co.name)}`} alt={co.name}
                             className={`object-contain ${isTop3 ? "w-7 h-7" : "w-5 h-5"}`}
                             onError={(e) => {
@@ -713,18 +731,15 @@ function AlumniSection() {
                     );
                   })}
                 </div>
-                <div className="px-5 py-2.5 border-t border-white/[0.05]">
-                  <p className="text-[10px] text-zinc-700">Counts from full dataset · trends from {sample.toLocaleString()} sampled profiles</p>
-                </div>
               </div>
 
               {/* Career Pathways — each row a unique color */}
-              <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
+              <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden flex flex-col">
                 <div className="px-5 pt-5 pb-3 border-b border-white/[0.06]">
                   <p className="text-sm font-bold text-white">Career Pathways</p>
                   <p className="text-[11px] text-zinc-500 mt-0.5">Function distribution across alumni</p>
                 </div>
-                <div className="px-5 py-4 space-y-4">
+                <div className="px-5 py-4 space-y-4 flex-1">
                   {trends.top_functions.map((fn, i) => {
                     const c = fnColors[i % fnColors.length];
                     return (
@@ -746,7 +761,7 @@ function AlumniSection() {
 
                 {/* Locations inside this card */}
                 {trends.top_locations && trends.top_locations.length > 0 && (
-                  <div className="px-5 pb-4 border-t border-white/[0.06] pt-4">
+                  <div className="px-5 pb-5 border-t border-white/[0.06] pt-4">
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5">Top Locations</p>
                     <div className="flex flex-wrap gap-1.5">
                       {trends.top_locations.map((loc, i) => (
@@ -761,6 +776,80 @@ function AlumniSection() {
               </div>
             </div>
 
+            {/* ── Now Hiring ──────────────────────────────────────────────── */}
+            <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
+              <div className="px-5 pt-5 pb-4 border-b border-white/[0.07] flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-white">Now Hiring</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Open roles at top alumni employers — click to apply</p>
+                </div>
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-400 uppercase tracking-widest shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live
+                </span>
+              </div>
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {trends.top_companies.slice(0, 6).map((co, i) => {
+                  const jobsUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(co.name)}&f_TPR=r604800`;
+                  const rankColors = ["#f59e0b", "#94a3b8", "#b45309"];
+                  const rankColor = rankColors[i] ?? "#52525b";
+                  return (
+                    <a
+                      key={co.name}
+                      href={jobsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex flex-col rounded-xl border bg-white/[0.03] hover:bg-white/[0.07] transition-all duration-200 overflow-hidden"
+                      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                    >
+                      {/* Top accent bar keyed to rank */}
+                      <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${rankColor}90, transparent)` }} />
+
+                      <div className="p-4 flex-1 flex flex-col gap-3">
+                        {/* Logo + name row */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white flex items-center justify-center shrink-0 overflow-hidden" style={{ borderRadius: 0 }}>
+                            <img
+                              src={`/api/logo?company=${encodeURIComponent(co.name)}`}
+                              alt={co.name}
+                              className="w-8 h-8 object-contain"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                                (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                                  `<span style="font-size:14px;font-weight:900;color:#1e293b">${co.name.trim()[0]?.toUpperCase()}</span>`;
+                              }}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-white truncate">{co.name}</p>
+                            <p className="text-[11px] text-zinc-500 mt-0.5">
+                              <span style={{ color: rankColor }} className="font-bold">{co.count.toLocaleString()}</span> alumni here
+                            </p>
+                          </div>
+                          {/* Rank badge */}
+                          <span className="text-xs font-black tabular-nums shrink-0" style={{ color: rankColor }}>#{i + 1}</span>
+                        </div>
+
+                        {/* Spacer */}
+                        <div className="flex-1" />
+
+                        {/* Apply CTA */}
+                        <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                          <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">LinkedIn Jobs</span>
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                            View open roles
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M5 12h14M13 6l6 6-6 6"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* ── Alumni Profiles ─────────────────────────────────────────── */}
             <div className="flex items-center justify-between">
               <div>
@@ -770,7 +859,20 @@ function AlumniSection() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {alumni.slice(0, 9).map((person, idx) => {
-                const color = personColors[idx % personColors.length];
+                // Color by job function, not index
+                const fnColorMap: Record<string, string> = {
+                  "Engineering & Infrastructure": "#60a5fa",
+                  "Product & Design":             "#a78bfa",
+                  "Sales & Business Dev":         "#f472b6",
+                  "Marketing & Growth":           "#34d399",
+                  "Operations & Strategy":        "#fb923c",
+                  "Finance & Administration":     "#f59e0b",
+                  "Data Science & Research":      "#06b6d4",
+                  "Customer Success":             "#4ade80",
+                  "Legal & Compliance":           "#e879f9",
+                  "People & HR":                  "#a3e635",
+                };
+                const color = fnColorMap[person.current_function] ?? personColors[idx % personColors.length];
                 // Use real name for initials; fall back to company initial only
                 const nameParts = (person.display_name ?? "").trim().split(/\s+/).filter(Boolean);
                 const initials = nameParts.length >= 2
@@ -785,7 +887,7 @@ function AlumniSection() {
                 return (
                   <div
                     key={person.id}
-                    className="rounded-2xl border bg-white/[0.03] overflow-hidden transition-all duration-200 cursor-pointer group"
+                    className="rounded-lg border bg-white/[0.03] overflow-hidden transition-all duration-200 cursor-pointer group"
                     style={{ borderColor: `${color}20` }}
                     onClick={() => { if (person.linkedin_url) window.open(person.linkedin_url, "_blank", "noopener,noreferrer"); }}
                     title={person.linkedin_url ? "Open LinkedIn profile" : undefined}
@@ -797,8 +899,8 @@ function AlumniSection() {
                     <div className="p-4">
                       {/* Avatar + name/title block */}
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-black select-none"
-                          style={{ background: `${color}22`, color, border: `1.5px solid ${color}35` }}>
+                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-sm font-black select-none bg-white"
+                          style={{ color, borderRadius: 0 }}>
                           {initials}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -850,6 +952,217 @@ function AlumniSection() {
                 );
               })}
             </div>
+
+            {/* View all button */}
+            {alumni.length > 9 && (
+              <div className="flex justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAllAlumni(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border border-white/[0.12] bg-white/[0.05] text-zinc-300 hover:bg-white/[0.10] hover:text-white hover:border-white/[0.20] transition-all duration-200"
+                >
+                  View all {alumni.length} profiles
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M13 6l6 6-6 6"/>
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* ── All Profiles Modal — rendered via portal so it covers the app header ── */}
+            {showAllAlumni && typeof document !== "undefined" && createPortal(
+              <div
+                className="fixed inset-0 flex flex-col"
+                style={{ zIndex: 9999, background: "rgba(4,4,8,0.92)", backdropFilter: "blur(20px)" }}
+                onClick={() => { if (modalDropdownOpen) setModalDropdownOpen(false); }}
+              >
+                {/* Top bar */}
+                <div className="shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.08]"
+                  style={{ background: "rgba(8,8,12,0.98)" }}>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => { setShowAllAlumni(false); setModalFilterFn("all"); setModalDropdownOpen(false); }}
+                      className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover:-translate-x-0.5 transition-transform">
+                        <path d="M19 12H5M12 5l-7 7 7 7"/>
+                      </svg>
+                      <span className="text-sm font-medium">Back</span>
+                    </button>
+                    <span className="w-px h-5 bg-white/[0.10]" />
+                    <div>
+                      <span className="text-sm font-bold text-white">{searchedSchool}</span>
+                      {searchedMajor && <span className="text-sm text-zinc-500"> · {searchedMajor}</span>}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-zinc-600 uppercase tracking-widest">{alumni.length} profiles</span>
+                </div>
+
+                {/* Scrollable grid */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="max-w-6xl mx-auto px-8 py-6">
+                  {/* Filter bar */}
+                  {(() => {
+                    const fnColorMap: Record<string, string> = {
+                      "Engineering & Infrastructure": "#60a5fa",
+                      "Product & Design":             "#a78bfa",
+                      "Sales & Business Dev":         "#f472b6",
+                      "Marketing & Growth":           "#34d399",
+                      "Operations & Strategy":        "#fb923c",
+                      "Finance & Administration":     "#f59e0b",
+                      "Data Science & Research":      "#06b6d4",
+                      "Customer Success":             "#4ade80",
+                      "Legal & Compliance":           "#e879f9",
+                      "People & HR":                  "#a3e635",
+                    };
+                    const uniqueFns = Array.from(new Set(alumni.map(p => p.current_function).filter(Boolean)));
+                    const filteredAlumni = modalFilterFn === "all" ? alumni : alumni.filter(p => p.current_function === modalFilterFn);
+                    const activeColor = fnColorMap[modalFilterFn] ?? undefined;
+                    return (
+                      <>
+                      <div className="flex items-center gap-3 mb-5">
+                        {/* Dropdown */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setModalDropdownOpen(o => !o); }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all"
+                            style={{
+                              background: activeColor ? `${activeColor}15` : "rgba(255,255,255,0.05)",
+                              borderColor: activeColor ? `${activeColor}40` : "rgba(255,255,255,0.12)",
+                              color: activeColor ?? "rgba(255,255,255,0.8)",
+                            }}
+                          >
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: activeColor ?? "rgba(255,255,255,0.3)" }} />
+                            {modalFilterFn === "all" ? "All functions" : modalFilterFn.split(" & ")[0]}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                              style={{ transform: modalDropdownOpen ? "rotate(180deg)" : undefined, transition: "transform 0.2s" }}>
+                              <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                          </button>
+
+                          {modalDropdownOpen && (
+                            <div
+                              className="absolute top-full mt-1.5 left-0 rounded-xl border border-white/[0.12] overflow-hidden"
+                              style={{ background: "rgba(12,12,18,0.98)", backdropFilter: "blur(20px)", zIndex: 10, minWidth: 220, boxShadow: "0 20px 50px rgba(0,0,0,0.6)" }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="p-1">
+                                <button
+                                  type="button"
+                                  onClick={() => { setModalFilterFn("all"); setModalDropdownOpen(false); }}
+                                  className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                  style={{ background: modalFilterFn === "all" ? "rgba(255,255,255,0.08)" : "transparent", color: "rgba(255,255,255,0.8)" }}
+                                >
+                                  <span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
+                                  All functions
+                                  <span className="ml-auto text-xs text-zinc-600">{alumni.length}</span>
+                                </button>
+                                {uniqueFns.map(fn => {
+                                  const c = fnColorMap[fn] ?? "#94a3b8";
+                                  const count = alumni.filter(p => p.current_function === fn).length;
+                                  return (
+                                    <button
+                                      key={fn}
+                                      type="button"
+                                      onClick={() => { setModalFilterFn(fn); setModalDropdownOpen(false); }}
+                                      className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                      style={{ background: modalFilterFn === fn ? `${c}18` : "transparent", color: modalFilterFn === fn ? c : "rgba(255,255,255,0.7)" }}
+                                    >
+                                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />
+                                      {fn}
+                                      <span className="ml-auto text-xs text-zinc-600">{count}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-zinc-600">{filteredAlumni.length} profile{filteredAlumni.length !== 1 ? "s" : ""}</span>
+                      </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {filteredAlumni.map((person, idx) => {
+                      const color = fnColorMap[person.current_function] ?? personColors[idx % personColors.length];
+                      const nameParts = (person.display_name ?? "").trim().split(/\s+/).filter(Boolean);
+                      const initials = nameParts.length >= 2
+                        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+                        : nameParts.length === 1
+                          ? nameParts[0].slice(0, 2).toUpperCase()
+                          : (person.current_company?.trim()[0] ?? "?").toUpperCase();
+                      const displayName = person.display_name?.trim() || null;
+                      const fnShort = person.current_function.split(" & ")[0];
+
+                      return (
+                        <div
+                          key={person.id}
+                          className="rounded-xl border overflow-hidden transition-all duration-150 cursor-pointer group hover:scale-[1.01]"
+                          style={{
+                            background: "rgba(255,255,255,0.03)",
+                            borderColor: `${color}25`,
+                          }}
+                          onClick={() => { if (person.linkedin_url) window.open(person.linkedin_url, "_blank", "noopener,noreferrer"); }}
+                        >
+                          {/* Color bar */}
+                          <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}55)` }} />
+
+                          <div className="p-4">
+                            {/* Avatar row */}
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-11 h-11 flex items-center justify-center shrink-0 text-[13px] font-black select-none bg-white"
+                                style={{ color, borderRadius: 0 }}>
+                                {initials}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                {displayName && (
+                                  <p className="text-[13px] font-bold text-white leading-tight truncate">{displayName}</p>
+                                )}
+                                <p className={`truncate leading-snug ${displayName ? "text-[11px] text-zinc-400 mt-0.5" : "text-sm font-bold text-white"}`}>
+                                  {person.current_title}
+                                </p>
+                                <p className="text-xs font-semibold truncate mt-0.5" style={{ color }}>
+                                  {person.current_company}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Function badge + location */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {fnShort && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide"
+                                  style={{ background: `${color}15`, borderColor: `${color}30`, color }}>
+                                  {fnShort}
+                                </span>
+                              )}
+                              {person.current_location && (
+                                <span className="text-[10px] text-zinc-600 truncate">{person.current_location}</span>
+                              )}
+                            </div>
+
+                            {/* LinkedIn */}
+                            {person.linkedin_url && (
+                              <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center gap-1.5 text-[11px] text-zinc-600 group-hover:text-[#60a5fa] transition-colors">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg>
+                                View profile
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>{/* /grid */}
+                      </>
+                    );
+                  })()}
+                  </div>{/* /max-w container */}
+                </div>{/* /scrollable */}
+              </div>,
+              document.body
+            )}
           </>
         );
       })()}

@@ -85,21 +85,23 @@ export async function GET(request: Request) {
       .map(([name]) => name);
 
     // ── Real counts: parallel API query per company filtered by school ────
-    // Each call asks: "how many people from this school work at this company?"
-    // Using size=1 so the response is instant; the API returns the true total.
+    // Education and job filters MUST be separate nested groups with their own
+    // isJobsGroup flags — mixing them in one flat group causes severely low counts.
+    const eduFilters: LdtFilter[] = [
+      { field: "education.school", type: "must", match_type: "fuzzy", string_values: [school] },
+      ...(major ? [{ field: "education.field", type: "must" as const, match_type: "fuzzy" as const, string_values: [major] }] : []),
+    ];
     const companyRealCounts = await Promise.all(
       topCompanyNames.map(async (name) => {
         try {
-          const { total } = await searchPeopleWithTotal([{
-            operator: "and",
-            filters: [
-              // school filter (education)
-              { field: "education.school", type: "must", match_type: "fuzzy", string_values: [school], isJobsGroup: false } as LdtFilter,
-              ...(major ? [{ field: "education.field", type: "must" as const, match_type: "fuzzy" as const, string_values: [major], isJobsGroup: false } as LdtFilter] : []),
-              // company filter (jobs)
-              { field: "jobs.company.name", type: "must", match_type: "fuzzy", string_values: [name] } as LdtFilter,
-            ],
-          }], 1);
+          const { total } = await searchPeopleWithTotal([
+            // Education group — must have isJobsGroup: false
+            { operator: "and", isJobsGroup: false, filters: eduFilters },
+            // Job group — must have isJobsGroup: true, separate from edu group
+            { operator: "and", isJobsGroup: true, filters: [
+              { field: "jobs.company.name", type: "must", match_type: "fuzzy", string_values: [name] },
+            ]},
+          ], 1);
           return { name, total };
         } catch {
           // Fallback to sample count if the compound query fails
