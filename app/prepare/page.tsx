@@ -440,6 +440,7 @@ function AlumniSection() {
   const [trends,  setTrends]  = useState<AlumniTrends | null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+  const [formExpanded, setFormExpanded] = useState(true);
 
   async function search() {
     if (!school.trim()) return;
@@ -455,6 +456,7 @@ function AlumniSection() {
       if (list.length === 0) { setError("No alumni found. Try a different school name or major."); return; }
       setAlumni(list);
       setTrends(data.trends ?? null);
+      setFormExpanded(false); // collapse form after successful search
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -471,75 +473,90 @@ function AlumniSection() {
   return (
     <section className="space-y-4">
 
-      {/* ── Dashboard header ─────────────────────────────────────────────── */}
-      {/* NOTE: no overflow-hidden here so the school dropdown isn't clipped */}
-      <div className="relative rounded-2xl backdrop-blur-2xl border p-6"
+      {/* ── Search card — collapses after results load ───────────────────── */}
+      <div className="relative rounded-2xl backdrop-blur-2xl border"
         style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "var(--pg-glass-shadow)" }}>
-        {/* Top highlight line — inset so it doesn't need overflow-hidden */}
         <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
 
-        {/* Title + badge */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">College Network</h2>
-            <p className="text-sm text-white/45 mt-1 leading-snug">
-              See where alumni from your school work and what companies recruit them most.
-            </p>
-          </div>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 tracking-wider uppercase shrink-0 ml-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Live Data
-          </span>
-        </div>
-
-        {/* Search form */}
-        <form onSubmit={handleSubmit}>
-          {/* School input — full width, large */}
-          <div className="mb-3">
-            <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">School</label>
-            <SchoolInput
-              value={school}
-              onChange={setSchool}
-              placeholder="e.g. MIT, Stanford, University of Michigan…"
-              className="w-full rounded-xl px-4 py-3 text-sm font-medium text-white border border-white/[0.14] bg-white/[0.07] placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.10] transition-all"
-            />
-          </div>
-
-          {/* Major + button row */}
-          <div className="flex gap-2.5 items-end">
-            <div className="flex-1">
-              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Major <span className="text-zinc-700 normal-case font-normal">— optional</span></label>
-              <input
-                type="text"
-                value={major}
-                onChange={(e) => setMajor(e.target.value)}
-                placeholder="e.g. Computer Science, Finance, Economics…"
-                className="w-full rounded-xl px-4 py-3 text-sm font-medium text-white border border-white/[0.14] bg-white/[0.07] placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.10] transition-all"
-              />
+        {/* ── COMPACT state — shown after a successful search ── */}
+        {!formExpanded && searchedSchool ? (
+          <div className="flex items-center justify-between px-5 py-3.5">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex items-center gap-1.5 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest">Live</span>
+              </span>
+              <span className="w-px h-4 bg-white/[0.10]" />
+              <span className="text-sm font-bold text-white truncate">{searchedSchool}</span>
+              {searchedMajor && (
+                <span className="text-[11px] px-2 py-0.5 rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-300 font-semibold shrink-0">
+                  {searchedMajor}
+                </span>
+              )}
             </div>
             <button
-              type="submit"
-              disabled={loading || !school.trim()}
-              className="px-6 py-3 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150 shrink-0 shadow-[0_0_20px_rgba(59,130,246,0.35)]"
+              type="button"
+              onClick={() => setFormExpanded(true)}
+              className="ml-4 px-4 py-1.5 rounded-lg text-xs font-bold border border-white/[0.12] bg-white/[0.06] text-zinc-300 hover:bg-white/[0.12] hover:text-white transition-all shrink-0"
             >
-              {loading ? "Searching…" : "Search →"}
+              Search again
             </button>
           </div>
-
-          {/* Quick picks */}
-          {!school && (
-            <div className="flex items-center gap-2 mt-3 flex-wrap">
-              <span className="text-[11px] text-zinc-600">Quick:</span>
-              {["MIT", "Stanford", "Harvard", "UC Berkeley", "Carnegie Mellon"].map((s) => (
-                <button key={s} type="button"
-                  onClick={() => setSchool(s)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:text-white hover:border-white/[0.16] transition-all">
-                  {s}
-                </button>
-              ))}
+        ) : (
+          /* ── EXPANDED state — initial or after "Search again" ── */
+          <div className="p-6">
+            {/* Title + badge */}
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">College Network</h2>
+                <p className="text-sm text-white/45 mt-1 leading-snug">
+                  See where alumni from your school work and what companies recruit them most.
+                </p>
+              </div>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 tracking-wider uppercase shrink-0 ml-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Data
+              </span>
             </div>
-          )}
-        </form>
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">School</label>
+                <SchoolInput
+                  value={school}
+                  onChange={setSchool}
+                  placeholder="e.g. MIT, Stanford, University of Michigan…"
+                  className="w-full rounded-xl px-4 py-3 text-sm font-medium text-white border border-white/[0.14] bg-white/[0.07] placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.10] transition-all"
+                />
+              </div>
+              <div className="flex gap-2.5 items-end">
+                <div className="flex-1">
+                  <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">
+                    Major <span className="text-zinc-700 normal-case font-normal">— optional</span>
+                  </label>
+                  <input type="text" value={major} onChange={(e) => setMajor(e.target.value)}
+                    placeholder="e.g. Computer Science, Finance, Economics…"
+                    className="w-full rounded-xl px-4 py-3 text-sm font-medium text-white border border-white/[0.14] bg-white/[0.07] placeholder-zinc-600 focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.10] transition-all" />
+                </div>
+                <button type="submit" disabled={loading || !school.trim()}
+                  className="px-6 py-3 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0 shadow-[0_0_20px_rgba(59,130,246,0.35)]">
+                  {loading ? "Searching…" : "Search →"}
+                </button>
+              </div>
+              {!school && (
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <span className="text-[11px] text-zinc-600">Quick:</span>
+                  {["MIT", "Stanford", "Harvard", "UC Berkeley", "Carnegie Mellon"].map((s) => (
+                    <button key={s} type="button" onClick={() => setSchool(s)}
+                      className="text-[11px] px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:text-white hover:border-white/[0.16] transition-all">
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </form>
+          </div>
+        )}
       </div>
 
       {/* ── Error ────────────────────────────────────────────────────────── */}
@@ -608,39 +625,41 @@ function AlumniSection() {
       {!loading && trends && alumni.length > 0 && (() => {
         const fnColors = ["#60a5fa","#a78bfa","#34d399","#f59e0b","#f472b6","#fb923c","#06b6d4"];
         const personColors = ["#60a5fa","#a78bfa","#34d399","#f59e0b","#f472b6","#fb923c","#06b6d4","#e879f9","#4ade80"];
+
+        // Scale sample counts → estimated real counts using the true total from the API
+        const sample = trends.sample ?? 300;
+        const scaleFactor = trends.total / sample;
+        const estimatedCount = (sampleCount: number) =>
+          Math.round(sampleCount * scaleFactor).toLocaleString();
+
         const top1 = trends.top_companies[0];
-        const rest = trends.top_companies.slice(1, 5);
+        const maxBar = top1?.count ?? 1; // for relative bar widths
         return (
           <>
             {/* ── Hero stat bar ───────────────────────────────────────────── */}
-            <div className="relative rounded-2xl border border-white/[0.10] bg-white/[0.04] px-6 py-5"
+            <div className="relative rounded-2xl border border-white/[0.10] bg-white/[0.04]"
               style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
               <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-5">
-                <div>
-                  <div className="text-3xl font-black text-white tracking-tight leading-none">{trends.total.toLocaleString()}</div>
-                  <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mt-1.5">Alumni in Dataset</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-white tracking-tight leading-none">{trends.senior_pct ?? "—"}%</div>
-                  <div className="text-[10px] font-bold text-emerald-300/70 uppercase tracking-widest mt-1.5">In Senior+ Roles</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-white tracking-tight leading-none">{trends.top_companies.length}</div>
-                  <div className="text-[10px] font-bold text-violet-300/70 uppercase tracking-widest mt-1.5">Companies Hiring</div>
-                </div>
-                {topFn && (
-                  <div>
-                    <div className="text-3xl font-black text-white tracking-tight leading-none">{topFn.pct}%</div>
-                    {/* Show only the first word of the function name to prevent truncation */}
-                    <div className="text-[10px] font-bold text-amber-300/70 uppercase tracking-widest mt-1.5 leading-tight">
-                      {topFn.name.split(" ")[0]} Field
+              {/* 4 equal columns with dividers */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.07]">
+                {[
+                  { value: trends.total.toLocaleString(), label: "Alumni in Dataset",  color: "#60a5fa" },
+                  { value: `${trends.senior_pct ?? "—"}%`, label: "In Senior+ Roles", color: "#34d399" },
+                  { value: String(trends.top_companies.length), label: "Companies Hiring", color: "#a78bfa" },
+                  topFn ? { value: `${topFn.pct}%`, label: topFn.name.split(" & ")[0], color: "#f59e0b" } : null,
+                ].filter(Boolean).map((stat) => (
+                  <div key={stat!.label} className="px-6 py-5">
+                    <div className="text-3xl font-black text-white tracking-tight leading-none">{stat!.value}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest mt-2 leading-tight" style={{ color: `${stat!.color}99` }}>
+                      {stat!.label}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
               {trends.sample && (
-                <p className="text-[10px] text-zinc-700 mt-4">Trends from {trends.sample.toLocaleString()} sampled profiles</p>
+                <div className="px-6 pb-3 border-t border-white/[0.05]">
+                  <p className="text-[10px] text-zinc-700 pt-2">Based on {trends.sample.toLocaleString()} sampled profiles · {trends.total.toLocaleString()} total in dataset</p>
+                </div>
               )}
             </div>
 
@@ -654,11 +673,11 @@ function AlumniSection() {
                   <p className="text-[11px] text-zinc-500 mt-0.5">Where alumni currently work</p>
                 </div>
 
-                {/* Unified ranked list — all companies in one consistent style */}
+                {/* Unified ranked list */}
                 <div className="divide-y divide-white/[0.05]">
                   {trends.top_companies.map((co, i) => {
                     const isTop3 = i < 3;
-                    const rankColors = ["#f59e0b", "#94a3b8", "#b45309"]; // gold, silver, bronze
+                    const rankColors = ["#f59e0b", "#94a3b8", "#b45309"];
                     const rankColor = rankColors[i] ?? undefined;
                     return (
                       <div key={co.name} className={`flex items-center gap-3 px-5 ${isTop3 ? "py-3.5" : "py-2.5"} hover:bg-white/[0.03] transition-colors`}>
@@ -680,22 +699,27 @@ function AlumniSection() {
                             }} />
                         </div>
 
-                        {/* Name + bar */}
+                        {/* Name + estimated count + bar */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <p className={`truncate font-semibold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-300"}`}>{co.name}</p>
-                            <span className={`tabular-nums shrink-0 font-bold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-400"}`}>{co.count}</span>
+                            <span className={`tabular-nums shrink-0 font-bold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-400"}`}>
+                              ~{estimatedCount(co.count)}
+                            </span>
                           </div>
                           {isTop3 && (
                             <div className="mt-1.5 h-1 rounded-full bg-white/[0.07] overflow-hidden">
                               <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                                style={{ width: `${Math.max(co.pct * 4, 8)}%`, transition: "width 0.8s ease" }} />
+                                style={{ width: `${Math.max((co.count / maxBar) * 100, 6)}%`, transition: "width 0.8s ease" }} />
                             </div>
                           )}
                         </div>
                       </div>
                     );
                   })}
+                </div>
+                <div className="px-5 py-2.5 border-t border-white/[0.05]">
+                  <p className="text-[10px] text-zinc-700">~ Estimated from {sample.toLocaleString()} sampled profiles</p>
                 </div>
               </div>
 
