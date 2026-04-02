@@ -461,118 +461,195 @@ function AlumniSection() {
 
   const maxCompanyCount = trends?.top_companies[0]?.count ?? 1;
 
+  const topFn = trends?.top_functions[0];
+
   return (
-    <section className="space-y-5">
-      {/* Search card */}
-      <div className="relative rounded-2xl overflow-hidden backdrop-blur-2xl border p-5"
+    <section className="space-y-4">
+
+      {/* ── Dashboard header ─────────────────────────────────────────────── */}
+      <div className="relative rounded-2xl overflow-hidden backdrop-blur-2xl border p-6"
         style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "var(--pg-glass-shadow)" }}>
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-1.5 h-5 rounded-full bg-blue-400 shrink-0 shadow-[0_0_10px_rgba(96,165,250,0.6)]" />
-          <h2 className="text-base font-bold text-white tracking-tight">College Network</h2>
-        </div>
-        <p className="text-sm text-white/55 mb-4 ml-3.5">
-          See where alumni ended up and which companies hire most from your school
-        </p>
-        <form onSubmit={handleSubmit} className="space-y-2">
-          <div className="flex gap-2">
-            <SchoolInput
-              value={school}
-              onChange={setSchool}
-              placeholder="School — e.g. MIT, Stanford, University of Michigan"
-              className="flex-1 rounded-lg px-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800/80 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
-            />
+
+        {/* Title row */}
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">College Network</h2>
+            <p className="text-sm text-white/45 mt-1 max-w-xs leading-snug">
+              Track where alumni land and which companies recruit most from your school.
+            </p>
           </div>
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 tracking-wider uppercase shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live Data
+          </span>
+        </div>
+
+        {/* Inputs */}
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <SchoolInput
+            value={school}
+            onChange={setSchool}
+            placeholder="School — e.g. MIT, Stanford, University of Michigan"
+            className="w-full rounded-xl px-4 py-2.5 text-sm text-white border border-white/[0.12] bg-white/[0.06] placeholder-zinc-500 focus:outline-none focus:border-blue-500/60 transition-colors"
+          />
           <div className="flex gap-2">
             <input type="text" value={major} onChange={(e) => setMajor(e.target.value)}
-              placeholder="Major (optional) — e.g. Computer Science, Finance, Economics"
-              className="flex-1 rounded-lg px-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800/80 placeholder-zinc-500 focus:outline-none focus:border-blue-500" />
+              placeholder="Major (optional) — e.g. Computer Science, Finance"
+              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white border border-white/[0.12] bg-white/[0.06] placeholder-zinc-500 focus:outline-none focus:border-blue-500/60 transition-colors" />
             <button type="submit" disabled={loading || !school.trim()}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 shrink-0">
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 shrink-0">
               {loading ? "Searching…" : "Search"}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Error */}
+      {/* ── Error ────────────────────────────────────────────────────────── */}
       {error && (
         <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.08] px-4 py-3 text-sm text-amber-300">{error}</div>
       )}
 
-      {/* Loading skeleton */}
+      {/* ── Loading skeleton ─────────────────────────────────────────────── */}
       {loading && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5 space-y-3 animate-pulse">
-            <div className="h-3 w-32 bg-white/10 rounded" />
-            {[70, 55, 40, 30, 20].map((w, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="h-2.5 bg-white/10 rounded" style={{ width: `${w}%` }} />
-                <div className="h-2.5 w-8 bg-white/[0.06] rounded" />
+        <div className="space-y-4 animate-pulse">
+          {/* stat strip */}
+          <div className="grid grid-cols-3 gap-3">
+            {[1,2,3].map(i => (
+              <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
+                <div className="h-8 w-20 bg-white/10 rounded mb-2" />
+                <div className="h-2.5 w-24 bg-white/[0.06] rounded" />
               </div>
             ))}
           </div>
+          {/* two col */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 space-y-3">
+              <div className="h-3 w-32 bg-white/10 rounded" />
+              {[80,65,50,38,25].map((w,i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-white/[0.06]" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-2 bg-white/10 rounded" style={{ width: `${w}%` }} />
+                    <div className="h-1.5 bg-white/[0.06] rounded" style={{ width: `${w * 0.6}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 space-y-3">
+              <div className="h-3 w-28 bg-white/10 rounded" />
+              {[42,28,18,12].map((w,i) => (
+                <div key={i} className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <div className="h-2.5 bg-white/10 rounded" style={{ width: `${40+i*5}%` }} />
+                    <div className="h-2.5 w-8 bg-white/[0.06] rounded" />
+                  </div>
+                  <div className="h-2 rounded-full bg-white/[0.06]" />
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* profile cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 space-y-2 animate-pulse">
-                <div className="h-3 w-1/2 bg-white/10 rounded" />
-                <div className="h-3 w-3/4 bg-white/10 rounded" />
-                <div className="h-2 w-full bg-white/[0.06] rounded mt-3" />
+              <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/10" />
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-3 w-3/4 bg-white/10 rounded" />
+                    <div className="h-2.5 w-1/2 bg-white/[0.06] rounded" />
+                  </div>
+                </div>
+                <div className="h-2 w-full bg-white/[0.06] rounded" />
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Results */}
+      {/* ── Results dashboard ────────────────────────────────────────────── */}
       {!loading && trends && alumni.length > 0 && (
         <>
-          <p className="text-xs text-zinc-500">
-            {trends.total} alumni profiled from{" "}
-            <span className="text-zinc-200">{searchedSchool}</span>
-            {searchedMajor && <> · <span className="text-blue-300">{searchedMajor}</span></>}
-          </p>
+          {/* Stat strip */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { value: trends.total.toLocaleString(), label: "Alumni Profiled", color: "#60a5fa" },
+              { value: String(trends.top_companies.length), label: "Companies Hiring", color: "#34d399" },
+              { value: topFn ? `${topFn.pct}%` : "—", label: topFn ? topFn.name : "Top Function", color: "#a78bfa" },
+            ].map(({ value, label, color }) => (
+              <div key={label} className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.05] p-5"
+                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 20px rgba(0,0,0,0.25)" }}>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                  style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
+                <div className="text-3xl font-black tracking-tight text-white leading-none mb-1">{value}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: `${color}99` }}>{label}</div>
+              </div>
+            ))}
+          </div>
 
-          {/* Trends: top companies + functions side by side */}
+          {/* Two-column: companies + career pathways */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            {/* Top companies hiring */}
-            <div className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-4">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent" />
-              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-3">Top Companies Hiring</p>
-              <div className="space-y-2.5">
-                {trends.top_companies.map((co, i) => (
-                  <div key={co.name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-zinc-200 truncate pr-2">
-                        <span className="text-zinc-500 tabular-nums mr-1.5">{i + 1}.</span>
-                        {co.name}
-                      </span>
-                      <span className="text-[11px] text-blue-300/70 tabular-nums shrink-0">{co.count} alumni</span>
+            {/* Top Hiring Entities */}
+            <div className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-5">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/25 to-transparent" />
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-bold text-blue-300 uppercase tracking-widest">Top Hiring Entities</p>
+                <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.7)]" />
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {trends.top_companies.slice(0, 4).map((co) => (
+                  <div key={co.name}
+                    className="relative rounded-xl overflow-hidden border border-white/[0.08] bg-white/[0.04] p-3.5 hover:border-blue-400/25 hover:bg-white/[0.07] transition-all duration-200 group">
+                    <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.10] flex items-center justify-center mb-2 overflow-hidden">
+                      <img
+                        src={`/api/logo?company=${encodeURIComponent(co.name)}`}
+                        alt={co.name}
+                        className="w-6 h-6 object-contain"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                          (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                            `<span style="font-size:13px;font-weight:800;color:rgba(96,165,250,0.7)">${co.name.trim()[0]?.toUpperCase()}</span>`;
+                        }}
+                      />
                     </div>
-                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
-                        style={{ width: `${(co.count / maxCompanyCount) * 100}%`, transition: "width 0.6s ease" }} />
-                    </div>
+                    <p className="text-xs font-semibold text-white truncate leading-tight">{co.name}</p>
+                    <p className="text-[11px] text-blue-300/60 mt-0.5">{co.count} Alumni</p>
                   </div>
                 ))}
               </div>
+              {/* Remaining companies as compact list */}
+              {trends.top_companies.length > 4 && (
+                <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3">
+                  {trends.top_companies.slice(4).map((co, i) => (
+                    <div key={co.name} className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-400 truncate pr-2">
+                        <span className="text-zinc-600 mr-1.5">{i + 5}.</span>{co.name}
+                      </span>
+                      <span className="text-[11px] text-blue-300/50 tabular-nums shrink-0">{co.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Top functions */}
-            <div className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-4">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent" />
-              <p className="text-xs font-semibold text-emerald-300 uppercase tracking-wider mb-3">Where They Work</p>
-              <div className="space-y-2.5">
+            {/* Career Pathways / Where They Work */}
+            <div className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-5">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Career Pathways</p>
+                <p className="text-[11px] text-zinc-600 font-medium">Distribution %</p>
+              </div>
+              <div className="space-y-3.5">
                 {trends.top_functions.map((fn) => (
                   <div key={fn.name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-zinc-200">{fn.name}</span>
-                      <span className="text-[11px] text-emerald-300/70 tabular-nums">{fn.pct}%</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-medium text-zinc-200 truncate pr-2">{fn.name}</span>
+                      <span className="text-xs font-bold text-emerald-300 tabular-nums shrink-0">{fn.pct}%</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"
-                        style={{ width: `${fn.pct}%`, transition: "width 0.6s ease" }} />
+                        style={{ width: `${fn.pct}%`, transition: "width 0.8s cubic-bezier(0.16,1,0.3,1)" }} />
                     </div>
                   </div>
                 ))}
@@ -580,39 +657,71 @@ function AlumniSection() {
             </div>
           </div>
 
-          {/* Individual alumni cards */}
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider pt-1">Alumni Profiles</p>
+          {/* Elite Alumni Profiles */}
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Alumni Profiles</p>
+            <p className="text-[11px] text-zinc-600">
+              {searchedSchool}{searchedMajor ? ` · ${searchedMajor}` : ""}
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {alumni.map((person) => (
-              <div key={person.id}
-                className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.05] p-4 space-y-2 hover:border-blue-400/30 hover:bg-white/[0.07] transition-all duration-200">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/15 to-transparent" />
-                <div>
-                  <p className="text-sm font-semibold text-white leading-tight">{person.current_title}</p>
-                  <p className="text-xs text-blue-300/80 mt-0.5">{person.current_company}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {person.current_location && <p className="text-[11px] text-zinc-500">{person.current_location}</p>}
+            {alumni.map((person) => {
+              const initial = (person.current_title?.[0] ?? person.current_company?.[0] ?? "?").toUpperCase();
+              const avatarColors = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ec4899","#06b6d4"];
+              const color = avatarColors[(person.id?.charCodeAt(0) ?? 0) % avatarColors.length];
+              return (
+                <div key={person.id}
+                  className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.08] bg-white/[0.04] p-4 hover:border-white/[0.16] hover:bg-white/[0.07] transition-all duration-200 group">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                    style={{ background: `linear-gradient(90deg, transparent, ${color}30, transparent)` }} />
+
+                  {/* Avatar + name */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-black"
+                      style={{ background: `${color}18`, border: `1.5px solid ${color}35`, color }}>
+                      {initial}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-white leading-tight truncate">{person.current_title}</p>
+                      <p className="text-xs mt-0.5 font-medium truncate" style={{ color }}>{person.current_company}</p>
+                    </div>
+                  </div>
+
+                  {/* Location + function chips */}
+                  <div className="flex flex-wrap gap-1.5 mb-2.5">
                     {person.current_function && (
-                      <span className="text-[10px] text-emerald-400/70 border border-emerald-500/20 rounded-full px-1.5 py-0.5">{person.current_function}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
+                        style={{ background: `${color}15`, border: `1px solid ${color}30`, color: `${color}cc` }}>
+                        {person.current_function}
+                      </span>
+                    )}
+                    {person.current_location && (
+                      <span className="text-[10px] text-zinc-500 border border-white/[0.07] rounded-md px-2 py-0.5">
+                        {person.current_location}
+                      </span>
                     )}
                   </div>
+
+                  {/* Summary */}
+                  {person.job_history_summary && (
+                    <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-white/[0.06] pt-2.5 line-clamp-2">
+                      {person.job_history_summary}
+                    </p>
+                  )}
+
+                  {/* LinkedIn */}
+                  {person.linkedin_url && (
+                    <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-blue-400 transition-colors duration-150 mt-2">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                      </svg>
+                      View profile
+                    </a>
+                  )}
                 </div>
-                {person.job_history_summary && (
-                  <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-white/[0.07] pt-2">
-                    {person.job_history_summary}
-                  </p>
-                )}
-                {person.linkedin_url && (
-                  <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-blue-400 transition-colors duration-150">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                    </svg>
-                    View profile
-                  </a>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
