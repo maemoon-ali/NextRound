@@ -421,9 +421,12 @@ interface AlumnusPerson {
   linkedin_url: string | null;
 }
 interface AlumniTrends {
-  top_companies: { name: string; count: number; pct: number }[];
-  top_functions: { name: string; count: number; pct: number }[];
-  total: number;
+  top_companies:  { name: string; count: number; pct: number }[];
+  top_functions:  { name: string; count: number; pct: number }[];
+  top_locations?: { name: string; count: number }[];
+  total:       number;
+  sample?:     number;
+  senior_pct?: number;
 }
 
 function AlumniSection() {
@@ -573,8 +576,8 @@ function AlumniSection() {
           {/* Stat strip */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { value: trends.total.toLocaleString(), label: "Alumni Profiled", color: "#60a5fa" },
-              { value: String(trends.top_companies.length), label: "Companies Hiring", color: "#34d399" },
+              { value: trends.total.toLocaleString(), label: "Alumni in Dataset", color: "#60a5fa" },
+              { value: trends.senior_pct != null ? `${trends.senior_pct}%` : `${trends.top_companies.length}+`, label: trends.senior_pct != null ? "Senior+ Roles" : "Companies Hiring", color: "#34d399" },
               { value: topFn ? `${topFn.pct}%` : "—", label: topFn ? topFn.name : "Top Function", color: "#a78bfa" },
             ].map(({ value, label, color }) => (
               <div key={label} className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.05] p-5"
@@ -656,6 +659,26 @@ function AlumniSection() {
               </div>
             </div>
           </div>
+
+          {/* Top Locations strip */}
+          {trends.top_locations && trends.top_locations.length > 0 && (
+            <div className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] px-5 py-4">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" />
+              <p className="text-xs font-bold text-amber-300 uppercase tracking-widest mb-3">Where Alumni Work</p>
+              <div className="flex flex-wrap gap-2">
+                {trends.top_locations.map((loc, i) => (
+                  <div key={loc.name} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.04]">
+                    <span className="text-[10px] font-bold text-zinc-500">{i + 1}</span>
+                    <span className="text-xs font-medium text-zinc-200">{loc.name}</span>
+                    <span className="text-[11px] text-amber-300/60 tabular-nums">{loc.count}</span>
+                  </div>
+                ))}
+              </div>
+              {trends.sample && (
+                <p className="text-[10px] text-zinc-700 mt-2.5">Based on {trends.sample.toLocaleString()} sampled profiles · {trends.total.toLocaleString()} total alumni in dataset</p>
+              )}
+            </div>
+          )}
 
           {/* Elite Alumni Profiles */}
           <div className="flex items-center justify-between pt-1">

@@ -238,6 +238,19 @@ export async function searchPeople(filters: LdtFilter[], size = 100): Promise<Li
   return people.map(mapApiPerson).filter(Boolean) as LiveDataPerson[];
 }
 
+/** Like searchPeople but also returns the API's true total match count. */
+export async function searchPeopleWithTotal(
+  filters: LdtFilter[],
+  size = 100,
+): Promise<{ people: LiveDataPerson[]; total: number }> {
+  const body = filters.length > 0 ? { filters, size } : { size };
+  const { people, count } = await callSearchApi(body);
+  return {
+    people: people.map(mapApiPerson).filter(Boolean) as LiveDataPerson[],
+    total: count,
+  };
+}
+
 /** Get company metadata by fetching people at that company from LiveData. */
 export async function getCompanyMetaFromApi(
   companyName: string,
