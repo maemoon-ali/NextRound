@@ -363,7 +363,7 @@ export async function getPeopleAtCompany(
     try {
       const schoolFilters: LdtFilter[] = [
         ...subFilters,
-        { field: "educations.school_name", type: "must", match_type: "fuzzy", string_values: [school] },
+        { field: "education.school", type: "must", match_type: "fuzzy", string_values: [school], isJobsGroup: false },
       ];
       const { people: schoolPeople } = await callSearchApi({
         filters: [{ operator: "and", filters: schoolFilters }],

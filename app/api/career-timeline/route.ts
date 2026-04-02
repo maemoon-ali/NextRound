@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TimelineStep } from "@/components/ui/career-timeline";
 
-const LD_BASE = `https://gotlivedata.io/api/people/v1/${process.env.LIVEDATA_ORG_ID}`;
-const LD_KEY  = process.env.LIVEDATA_API_KEY ?? "";
+const LD_API_URL = process.env.LIVEDATA_API_URL ?? "https://gotlivedata.io/api/people/v1";
+const LD_ORG_ID  = process.env.LIVEDATA_ORG_ID ?? "";
+const LD_BASE    = `${LD_API_URL}/${LD_ORG_ID}`;
+const LD_KEY     = process.env.LIVEDATA_API_KEY ?? "";
 
 // ── Workforce.ai helpers ──────────────────────────────────────────────────────
 
@@ -58,19 +60,38 @@ export async function POST(req: NextRequest) {
 
   const url = linkedinUrl.trim().replace(/\/$/, "");
 
-  // ── 1. Try exact LinkedIn URL match ──────────────────────────────────────
+  // ── 1. Extract LinkedIn slug and use /find endpoint (same as import-linkedin) ─
+  const slugMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i);
+  const slug = slugMatch ? slugMatch[1] : url.replace(/^@/, "");
+
   let person: any = null;
 
-  const byUrl = await ldSearch([{
-    operator: "and",
-    filters: [{ field: "linkedin_url", type: "must", match_type: "fuzzy", string_values: [url] }],
-  }], 5);
-  person = byUrl[0] ?? null;
+  try {
+    const findRes = await fetch(`${LD_BASE}/find`, {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "content-type": "application/json",
+        Authorization: `Bearer ${LD_KEY}`,
+      },
+      body: JSON.stringify({
+        matches: [{ fields: [{ field_name: "linkedin", search_term: slug }] }],
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (findRes.ok) {
+      const findData = await findRes.json();
+      if (Array.isArray(findData.matches) && findData.matches[0]?.people?.length > 0) {
+        person = findData.matches[0].people[0];
+      } else if (Array.isArray(findData.people) && findData.people.length > 0) {
+        person = findData.people[0];
+      }
+    }
+  } catch { /* fall through to name fallback */ }
 
   // ── 2. Fallback: parse name from /in/firstname-lastname-XXXXXX ────────────
   if (!person) {
-    const username = url.match(/linkedin\.com\/in\/([^/?#]+)/)?.[1] ?? "";
-    const segments = username.split("-").filter(s => s.length > 1 && !/^\d{4,}$/.test(s));
+    const segments = slug.split("-").filter(s => s.length > 1 && !/^\d{4,}$/.test(s));
     if (segments.length >= 2) {
       const byName = await ldSearch([{
         operator: "and",

@@ -16,6 +16,7 @@ import { CompanyLogo } from "@/components/ui/company-logo";
 import { InterviewSearch, type InterviewRole } from "@/components/InterviewSearch";
 import { CareerTimeline, type TimelineStep } from "@/components/ui/career-timeline";
 import { HoverTextGlow } from "@/components/ui/hover-text-glow";
+import { SchoolInput } from "@/components/ui/school-input";
 
 // ── Key-point checklists ─────────────────────────────────────────────────────
 const KEY_POINTS_TECHNICAL = [
@@ -412,30 +413,43 @@ function MatchInfoCard({ reasons, score }: { reasons: string[]; score: number })
 // ── Alumni Section ────────────────────────────────────────────────────────────
 interface AlumnusPerson {
   id: string;
-  display_name: string;
   current_title: string;
   current_company: string;
   current_location: string;
+  current_function: string;
   job_history_summary: string;
   linkedin_url: string | null;
+}
+interface AlumniTrends {
+  top_companies: { name: string; count: number; pct: number }[];
+  top_functions: { name: string; count: number; pct: number }[];
+  total: number;
 }
 
 function AlumniSection() {
   const [school, setSchool] = useState("");
-  const [query, setQuery]   = useState("");
-  const [alumni, setAlumni] = useState<AlumnusPerson[]>([]);
+  const [major,  setMajor]  = useState("");
+  const [searchedSchool, setSearchedSchool] = useState("");
+  const [searchedMajor,  setSearchedMajor]  = useState("");
+  const [alumni,  setAlumni]  = useState<AlumnusPerson[]>([]);
+  const [trends,  setTrends]  = useState<AlumniTrends | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
+  const [error,   setError]   = useState<string | null>(null);
 
-  async function search(schoolName: string) {
-    if (!schoolName.trim()) return;
-    setLoading(true); setError(null); setAlumni([]);
+  async function search() {
+    if (!school.trim()) return;
+    setLoading(true); setError(null); setAlumni([]); setTrends(null);
+    setSearchedSchool(school); setSearchedMajor(major);
     try {
-      const res  = await fetch(`/api/alumni?school=${encodeURIComponent(schoolName)}&limit=12`);
+      const params = new URLSearchParams({ school });
+      if (major.trim()) params.set("major", major);
+      const res  = await fetch(`/api/alumni?${params}`);
       const data = await res.json();
       if (!res.ok) { setError(data?.error ?? "Failed to load alumni."); return; }
-      setAlumni(data.alumni ?? []);
-      if ((data.alumni ?? []).length === 0) setError("No alumni found for that school.");
+      const list = data.alumni ?? [];
+      if (list.length === 0) { setError("No alumni found. Try a different school name or major."); return; }
+      setAlumni(list);
+      setTrends(data.trends ?? null);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -443,16 +457,14 @@ function AlumniSection() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setQuery(school);
-    search(school);
-  }
+  function handleSubmit(e: React.FormEvent) { e.preventDefault(); search(); }
+
+  const maxCompanyCount = trends?.top_companies[0]?.count ?? 1;
 
   return (
     <section className="space-y-5">
-      {/* Header */}
-      <div className="relative rounded-2xl overflow-hidden backdrop-blur-2xl border p-5 transition-all duration-300"
+      {/* Search card */}
+      <div className="relative rounded-2xl overflow-hidden backdrop-blur-2xl border p-5"
         style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "var(--pg-glass-shadow)" }}>
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
         <div className="flex items-center gap-2 mb-1">
@@ -460,70 +472,136 @@ function AlumniSection() {
           <h2 className="text-base font-bold text-white tracking-tight">College Network</h2>
         </div>
         <p className="text-sm text-white/55 mb-4 ml-3.5">
-          See where alumni from your school ended up — powered by ~100M verified profiles
+          See where alumni ended up and which companies hire most from your school
         </p>
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={school}
-            onChange={(e) => setSchool(e.target.value)}
-            placeholder="e.g. MIT, Stanford, University of Michigan"
-            className="flex-1 rounded-lg px-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800/80 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
-          />
-          <button
-            type="submit"
-            disabled={loading || !school.trim()}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
-          >
-            {loading ? "Searching…" : "Search"}
-          </button>
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <div className="flex gap-2">
+            <SchoolInput
+              value={school}
+              onChange={setSchool}
+              placeholder="School — e.g. MIT, Stanford, University of Michigan"
+              className="flex-1 rounded-lg px-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800/80 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="flex gap-2">
+            <input type="text" value={major} onChange={(e) => setMajor(e.target.value)}
+              placeholder="Major (optional) — e.g. Computer Science, Finance, Economics"
+              className="flex-1 rounded-lg px-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800/80 placeholder-zinc-500 focus:outline-none focus:border-blue-500" />
+            <button type="submit" disabled={loading || !school.trim()}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 shrink-0">
+              {loading ? "Searching…" : "Search"}
+            </button>
+          </div>
         </form>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.08] px-4 py-3 text-sm text-amber-300">
-          {error}
-        </div>
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.08] px-4 py-3 text-sm text-amber-300">{error}</div>
       )}
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 space-y-2 animate-pulse">
-              <div className="h-3 w-1/2 bg-white/10 rounded" />
-              <div className="h-3 w-3/4 bg-white/10 rounded" />
-              <div className="h-2 w-full bg-white/[0.06] rounded mt-3" />
-            </div>
-          ))}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5 space-y-3 animate-pulse">
+            <div className="h-3 w-32 bg-white/10 rounded" />
+            {[70, 55, 40, 30, 20].map((w, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="h-2.5 bg-white/10 rounded" style={{ width: `${w}%` }} />
+                <div className="h-2.5 w-8 bg-white/[0.06] rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 space-y-2 animate-pulse">
+                <div className="h-3 w-1/2 bg-white/10 rounded" />
+                <div className="h-3 w-3/4 bg-white/10 rounded" />
+                <div className="h-2 w-full bg-white/[0.06] rounded mt-3" />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Results */}
-      {!loading && alumni.length > 0 && (
+      {!loading && trends && alumni.length > 0 && (
         <>
-          <p className="text-xs text-zinc-500">{alumni.length} alumni found for <span className="text-zinc-300">{query}</span></p>
+          <p className="text-xs text-zinc-500">
+            {trends.total} alumni profiled from{" "}
+            <span className="text-zinc-200">{searchedSchool}</span>
+            {searchedMajor && <> · <span className="text-blue-300">{searchedMajor}</span></>}
+          </p>
+
+          {/* Trends: top companies + functions side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Top companies hiring */}
+            <div className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-4">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent" />
+              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-3">Top Companies Hiring</p>
+              <div className="space-y-2.5">
+                {trends.top_companies.map((co, i) => (
+                  <div key={co.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-zinc-200 truncate pr-2">
+                        <span className="text-zinc-500 tabular-nums mr-1.5">{i + 1}.</span>
+                        {co.name}
+                      </span>
+                      <span className="text-[11px] text-blue-300/70 tabular-nums shrink-0">{co.count} alumni</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                        style={{ width: `${(co.count / maxCompanyCount) * 100}%`, transition: "width 0.6s ease" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top functions */}
+            <div className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-4">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent" />
+              <p className="text-xs font-semibold text-emerald-300 uppercase tracking-wider mb-3">Where They Work</p>
+              <div className="space-y-2.5">
+                {trends.top_functions.map((fn) => (
+                  <div key={fn.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-zinc-200">{fn.name}</span>
+                      <span className="text-[11px] text-emerald-300/70 tabular-nums">{fn.pct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"
+                        style={{ width: `${fn.pct}%`, transition: "width 0.6s ease" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Individual alumni cards */}
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider pt-1">Alumni Profiles</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {alumni.map((person) => (
               <div key={person.id}
                 className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.05] p-4 space-y-2 hover:border-blue-400/30 hover:bg-white/[0.07] transition-all duration-200">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent" />
-                {/* Current role */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/15 to-transparent" />
                 <div>
                   <p className="text-sm font-semibold text-white leading-tight">{person.current_title}</p>
                   <p className="text-xs text-blue-300/80 mt-0.5">{person.current_company}</p>
-                  {person.current_location && (
-                    <p className="text-[11px] text-zinc-500 mt-0.5">{person.current_location}</p>
-                  )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {person.current_location && <p className="text-[11px] text-zinc-500">{person.current_location}</p>}
+                    {person.current_function && (
+                      <span className="text-[10px] text-emerald-400/70 border border-emerald-500/20 rounded-full px-1.5 py-0.5">{person.current_function}</span>
+                    )}
+                  </div>
                 </div>
-                {/* Career path */}
                 {person.job_history_summary && (
                   <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-white/[0.07] pt-2">
                     {person.job_history_summary}
                   </p>
                 )}
-                {/* LinkedIn */}
                 {person.linkedin_url && (
                   <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-blue-400 transition-colors duration-150">
@@ -756,7 +834,7 @@ function PrepareContent() {
 
         {/* Scrollable body */}
         <main className="flex-1 overflow-y-auto">
-          <div className="px-6 py-6 space-y-6">
+          <div className={`py-6 space-y-6 ${activeSection === "alumni" ? "px-3" : "px-6"}`}>
 
             {/* Alumni section */}
             {activeSection === "alumni" && <AlumniSection />}
