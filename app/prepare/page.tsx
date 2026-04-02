@@ -423,9 +423,10 @@ interface AlumnusPerson {
   linkedin_url: string | null;
 }
 interface AlumniTrends {
-  top_companies:  { name: string; count: number; pct: number }[];
-  top_functions:  { name: string; count: number; pct: number }[];
-  top_locations?: { name: string; count: number }[];
+  top_companies:   { name: string; count: number; pct: number }[];
+  top_functions:   { name: string; count: number; pct: number }[];
+  top_locations?:  { name: string; count: number }[];
+  surge_companies?: { name: string; recent_count: number }[];
   total:       number;
   sample?:     number;
   senior_pct?: number;
