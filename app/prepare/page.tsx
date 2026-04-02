@@ -571,183 +571,227 @@ function AlumniSection() {
       )}
 
       {/* ── Results dashboard ────────────────────────────────────────────── */}
-      {!loading && trends && alumni.length > 0 && (
-        <>
-          {/* Stat strip */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { value: trends.total.toLocaleString(), label: "Alumni in Dataset", color: "#60a5fa" },
-              { value: trends.senior_pct != null ? `${trends.senior_pct}%` : `${trends.top_companies.length}+`, label: trends.senior_pct != null ? "Senior+ Roles" : "Companies Hiring", color: "#34d399" },
-              { value: topFn ? `${topFn.pct}%` : "—", label: topFn ? topFn.name : "Top Function", color: "#a78bfa" },
-            ].map(({ value, label, color }) => (
-              <div key={label} className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.05] p-5"
-                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 20px rgba(0,0,0,0.25)" }}>
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px"
-                  style={{ background: `linear-gradient(90deg, transparent, ${color}40, transparent)` }} />
-                <div className="text-3xl font-black tracking-tight text-white leading-none mb-1">{value}</div>
-                <div className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: `${color}99` }}>{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Two-column: companies + career pathways */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Top Hiring Entities */}
-            <div className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-5">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/25 to-transparent" />
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-bold text-blue-300 uppercase tracking-widest">Top Hiring Entities</p>
-                <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.7)]" />
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                {trends.top_companies.slice(0, 4).map((co) => (
-                  <div key={co.name}
-                    className="relative rounded-xl overflow-hidden border border-white/[0.08] bg-white/[0.04] p-3.5 hover:border-blue-400/25 hover:bg-white/[0.07] transition-all duration-200 group">
-                    <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.10] flex items-center justify-center mb-2 overflow-hidden">
-                      <img
-                        src={`/api/logo?company=${encodeURIComponent(co.name)}`}
-                        alt={co.name}
-                        className="w-6 h-6 object-contain"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                          (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                            `<span style="font-size:13px;font-weight:800;color:rgba(96,165,250,0.7)">${co.name.trim()[0]?.toUpperCase()}</span>`;
-                        }}
-                      />
-                    </div>
-                    <p className="text-xs font-semibold text-white truncate leading-tight">{co.name}</p>
-                    <p className="text-[11px] text-blue-300/60 mt-0.5">{co.count} Alumni</p>
+      {!loading && trends && alumni.length > 0 && (() => {
+        const fnColors = ["#60a5fa","#a78bfa","#34d399","#f59e0b","#f472b6","#fb923c","#06b6d4"];
+        const personColors = ["#60a5fa","#a78bfa","#34d399","#f59e0b","#f472b6","#fb923c","#06b6d4","#e879f9","#4ade80"];
+        const top1 = trends.top_companies[0];
+        const rest = trends.top_companies.slice(1, 5);
+        return (
+          <>
+            {/* ── Hero stat bar ───────────────────────────────────────────── */}
+            <div className="relative rounded-2xl overflow-hidden border border-white/[0.10] bg-white/[0.04] px-6 py-5"
+              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
+              <div className="flex items-center justify-between flex-wrap gap-6">
+                <div>
+                  <div className="text-4xl font-black text-white tracking-tight leading-none">{trends.total.toLocaleString()}</div>
+                  <div className="text-xs font-semibold text-blue-300/70 uppercase tracking-widest mt-1">Alumni in Dataset</div>
+                </div>
+                <div className="w-px h-10 bg-white/[0.08] hidden sm:block" />
+                <div>
+                  <div className="text-4xl font-black text-white tracking-tight leading-none">{trends.senior_pct ?? "—"}%</div>
+                  <div className="text-xs font-semibold text-emerald-300/70 uppercase tracking-widest mt-1">In Senior+ Roles</div>
+                </div>
+                <div className="w-px h-10 bg-white/[0.08] hidden sm:block" />
+                <div>
+                  <div className="text-4xl font-black text-white tracking-tight leading-none">{trends.top_companies.length}</div>
+                  <div className="text-xs font-semibold text-violet-300/70 uppercase tracking-widest mt-1">Companies Hiring</div>
+                </div>
+                {topFn && <>
+                  <div className="w-px h-10 bg-white/[0.08] hidden sm:block" />
+                  <div>
+                    <div className="text-4xl font-black text-white tracking-tight leading-none">{topFn.pct}%</div>
+                    <div className="text-xs font-semibold text-amber-300/70 uppercase tracking-widest mt-1 max-w-[120px] truncate">{topFn.name}</div>
                   </div>
-                ))}
+                </>}
+                {trends.sample && (
+                  <p className="text-[10px] text-zinc-600 self-end ml-auto">
+                    Trends from {trends.sample.toLocaleString()} sampled profiles
+                  </p>
+                )}
               </div>
-              {/* Remaining companies as compact list */}
-              {trends.top_companies.length > 4 && (
-                <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3">
-                  {trends.top_companies.slice(4).map((co, i) => (
-                    <div key={co.name} className="flex items-center justify-between">
-                      <span className="text-xs text-zinc-400 truncate pr-2">
-                        <span className="text-zinc-600 mr-1.5">{i + 5}.</span>{co.name}
-                      </span>
-                      <span className="text-[11px] text-blue-300/50 tabular-nums shrink-0">{co.count}</span>
+            </div>
+
+            {/* ── Companies + Pathways ────────────────────────────────────── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Top Hiring Companies */}
+              <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
+                <div className="px-5 pt-5 pb-3 border-b border-white/[0.06]">
+                  <p className="text-sm font-bold text-white">Top Hiring Companies</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Where alumni work most</p>
+                </div>
+
+                {/* #1 featured */}
+                {top1 && (
+                  <div className="px-5 py-4 border-b border-white/[0.06] flex items-center gap-4">
+                    <div className="relative">
+                      <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-amber-400 text-[8px] font-black text-black flex items-center justify-center z-10">1</span>
+                      <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden border border-white/20 shrink-0">
+                        <img src={`/api/logo?company=${encodeURIComponent(top1.name)}`} alt={top1.name}
+                          className="w-9 h-9 object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                            (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                              `<span style="font-size:18px;font-weight:900;color:#1e293b">${top1.name.trim()[0]?.toUpperCase()}</span>`;
+                          }} />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-bold text-white truncate">{top1.name}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">{top1.count} alumni · {top1.pct}% of sample</p>
+                      <div className="mt-2 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                          style={{ width: "100%", transition: "width 0.8s ease" }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2–5 in a 2-col grid */}
+                <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
+                  {rest.map((co, i) => (
+                    <div key={co.name} className="bg-[#0d0d0f] px-4 py-3 flex items-center gap-3">
+                      <span className="text-xs font-bold text-zinc-600 w-4 shrink-0">{i + 2}</span>
+                      <div className="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center overflow-hidden shrink-0">
+                        <img src={`/api/logo?company=${encodeURIComponent(co.name)}`} alt={co.name}
+                          className="w-5 h-5 object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                            (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                              `<span style="font-size:10px;font-weight:900;color:#1e293b">${co.name.trim()[0]?.toUpperCase()}</span>`;
+                          }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-white truncate">{co.name}</p>
+                        <p className="text-[10px] text-zinc-500">{co.count} alumni</p>
+                      </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
 
-            {/* Career Pathways / Where They Work */}
-            <div className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] p-5">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Career Pathways</p>
-                <p className="text-[11px] text-zinc-600 font-medium">Distribution %</p>
+                {/* 6–10 compact */}
+                {trends.top_companies.length > 5 && (
+                  <div className="px-5 py-3 border-t border-white/[0.06] space-y-2">
+                    {trends.top_companies.slice(5).map((co, i) => (
+                      <div key={co.name} className="flex items-center justify-between">
+                        <span className="text-xs text-zinc-500 truncate pr-2">
+                          <span className="text-zinc-700 tabular-nums mr-2">{i + 6}.</span>{co.name}
+                        </span>
+                        <span className="text-[11px] font-semibold text-zinc-400 tabular-nums shrink-0">{co.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-3.5">
-                {trends.top_functions.map((fn) => (
-                  <div key={fn.name}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-medium text-zinc-200 truncate pr-2">{fn.name}</span>
-                      <span className="text-xs font-bold text-emerald-300 tabular-nums shrink-0">{fn.pct}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"
-                        style={{ width: `${fn.pct}%`, transition: "width 0.8s cubic-bezier(0.16,1,0.3,1)" }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          {/* Top Locations strip */}
-          {trends.top_locations && trends.top_locations.length > 0 && (
-            <div className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.04] px-5 py-4">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" />
-              <p className="text-xs font-bold text-amber-300 uppercase tracking-widest mb-3">Where Alumni Work</p>
-              <div className="flex flex-wrap gap-2">
-                {trends.top_locations.map((loc, i) => (
-                  <div key={loc.name} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.04]">
-                    <span className="text-[10px] font-bold text-zinc-500">{i + 1}</span>
-                    <span className="text-xs font-medium text-zinc-200">{loc.name}</span>
-                    <span className="text-[11px] text-amber-300/60 tabular-nums">{loc.count}</span>
-                  </div>
-                ))}
-              </div>
-              {trends.sample && (
-                <p className="text-[10px] text-zinc-700 mt-2.5">Based on {trends.sample.toLocaleString()} sampled profiles · {trends.total.toLocaleString()} total alumni in dataset</p>
-              )}
-            </div>
-          )}
-
-          {/* Elite Alumni Profiles */}
-          <div className="flex items-center justify-between pt-1">
-            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Alumni Profiles</p>
-            <p className="text-[11px] text-zinc-600">
-              {searchedSchool}{searchedMajor ? ` · ${searchedMajor}` : ""}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {alumni.map((person) => {
-              const initial = (person.current_title?.[0] ?? person.current_company?.[0] ?? "?").toUpperCase();
-              const avatarColors = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ec4899","#06b6d4"];
-              const color = avatarColors[(person.id?.charCodeAt(0) ?? 0) % avatarColors.length];
-              return (
-                <div key={person.id}
-                  className="relative rounded-2xl overflow-hidden backdrop-blur-xl border border-white/[0.08] bg-white/[0.04] p-4 hover:border-white/[0.16] hover:bg-white/[0.07] transition-all duration-200 group">
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px"
-                    style={{ background: `linear-gradient(90deg, transparent, ${color}30, transparent)` }} />
-
-                  {/* Avatar + name */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-black"
-                      style={{ background: `${color}18`, border: `1.5px solid ${color}35`, color }}>
-                      {initial}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-white leading-tight truncate">{person.current_title}</p>
-                      <p className="text-xs mt-0.5 font-medium truncate" style={{ color }}>{person.current_company}</p>
-                    </div>
-                  </div>
-
-                  {/* Location + function chips */}
-                  <div className="flex flex-wrap gap-1.5 mb-2.5">
-                    {person.current_function && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
-                        style={{ background: `${color}15`, border: `1px solid ${color}30`, color: `${color}cc` }}>
-                        {person.current_function}
-                      </span>
-                    )}
-                    {person.current_location && (
-                      <span className="text-[10px] text-zinc-500 border border-white/[0.07] rounded-md px-2 py-0.5">
-                        {person.current_location}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Summary */}
-                  {person.job_history_summary && (
-                    <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-white/[0.06] pt-2.5 line-clamp-2">
-                      {person.job_history_summary}
-                    </p>
-                  )}
-
-                  {/* LinkedIn */}
-                  {person.linkedin_url && (
-                    <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-blue-400 transition-colors duration-150 mt-2">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                      </svg>
-                      View profile
-                    </a>
-                  )}
+              {/* Career Pathways — each row a unique color */}
+              <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] overflow-hidden">
+                <div className="px-5 pt-5 pb-3 border-b border-white/[0.06]">
+                  <p className="text-sm font-bold text-white">Career Pathways</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">Function distribution across alumni</p>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+                <div className="px-5 py-4 space-y-4">
+                  {trends.top_functions.map((fn, i) => {
+                    const c = fnColors[i % fnColors.length];
+                    return (
+                      <div key={fn.name}>
+                        <div className="flex items-baseline justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />
+                            <span className="text-sm font-semibold text-zinc-100">{fn.name}</span>
+                          </div>
+                          <span className="text-base font-black tabular-nums" style={{ color: c }}>{fn.pct}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${fn.pct}%`, background: c, opacity: 0.7, transition: "width 0.8s cubic-bezier(0.16,1,0.3,1)" }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Locations inside this card */}
+                {trends.top_locations && trends.top_locations.length > 0 && (
+                  <div className="px-5 pb-4 border-t border-white/[0.06] pt-4">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5">Top Locations</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {trends.top_locations.map((loc, i) => (
+                        <span key={loc.name} className="text-xs px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.04] text-zinc-300">
+                          <span className="text-zinc-600 mr-1">{i + 1}.</span>{loc.name}
+                          <span className="text-zinc-600 ml-1.5 tabular-nums">{loc.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Alumni Profiles ─────────────────────────────────────────── */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-white">Alumni Profiles</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">{searchedSchool}{searchedMajor ? ` · ${searchedMajor}` : ""}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {alumni.slice(0, 9).map((person, idx) => {
+                const color = personColors[idx % personColors.length];
+                const initials = [person.current_title, person.current_company]
+                  .map(s => s?.trim()[0]?.toUpperCase() ?? "")
+                  .filter(Boolean).join("").slice(0, 2) || "?";
+                return (
+                  <div key={person.id}
+                    className="rounded-2xl border bg-white/[0.03] overflow-hidden hover:bg-white/[0.06] transition-all duration-200"
+                    style={{ borderColor: `${color}25` }}>
+                    {/* Colored top bar */}
+                    <div className="h-1 w-full" style={{ background: color }} />
+                    <div className="p-4">
+                      {/* Avatar + name row */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-sm font-black"
+                          style={{ background: `${color}20`, color }}>
+                          {initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-white leading-tight truncate">{person.current_title}</p>
+                          <p className="text-xs font-semibold mt-0.5 truncate" style={{ color }}>{person.current_company}</p>
+                        </div>
+                      </div>
+                      {/* Meta row */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {person.current_location && (
+                          <span className="text-[11px] text-zinc-500 flex items-center gap-1">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                            {person.current_location}
+                          </span>
+                        )}
+                        {person.current_function && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                            style={{ background: `${color}18`, color: `${color}cc` }}>
+                            {person.current_function.split(" & ")[0].split(" ")[0]}
+                          </span>
+                        )}
+                      </div>
+                      {/* LinkedIn */}
+                      {person.linkedin_url && (
+                        <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
+                          className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-blue-400 transition-colors">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                          </svg>
+                          LinkedIn →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
     </section>
   );
 }
