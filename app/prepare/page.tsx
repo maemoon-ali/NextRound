@@ -779,7 +779,7 @@ function AlumniSection() {
 
             {/* ── Hiring Surge ────────────────────────────────────────────── */}
             {(() => {
-              const surgeList: { name: string; recent_count: number }[] =
+              const surgeList: { name: string; recent_count: number; domain: string | null }[] =
                 (trends.surge_companies && trends.surge_companies.length > 0)
                   ? trends.surge_companies
                   : trends.top_companies.slice(0, 6).map((co: { name: string; count: number }) => ({ name: co.name, recent_count: co.count, domain: null }));
