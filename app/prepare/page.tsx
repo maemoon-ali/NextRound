@@ -564,7 +564,7 @@ function AlumniSection() {
               </div>
               {!school && (
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  <span className="text-[11px] text-zinc-600">Quick:</span>
+                  <span className="text-[11px] text-zinc-600">Popular:</span>
                   {["MIT", "Stanford", "Harvard", "UC Berkeley", "Carnegie Mellon"].map((s) => (
                     <button key={s} type="button" onClick={() => setSchool(s)}
                       className="text-[11px] px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:text-white hover:border-white/[0.16] transition-all">
@@ -763,7 +763,7 @@ function AlumniSection() {
                       {trends.top_locations.map((loc, i) => (
                         <span key={loc.name} className="text-xs px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.04] text-zinc-300">
                           <span className="text-zinc-600 mr-1">{i + 1}.</span>{loc.name}
-                          <span className="text-zinc-600 ml-1.5 tabular-nums">{loc.count}</span>
+                          <span className="text-blue-400/60 ml-1.5 tabular-nums font-semibold">{loc.count}</span>
                         </span>
                       ))}
                     </div>
