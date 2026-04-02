@@ -51,7 +51,7 @@ function useThemeToggle() {
 }
 
 // ── Types ───────────────────────────────────────────────────────────────────
-export type SidebarSection = "matches" | "history" | "saved" | "behavioral" | "technical" | "progress" | "settings" | "timeline";
+export type SidebarSection = "matches" | "history" | "saved" | "behavioral" | "technical" | "progress" | "settings" | "timeline" | "alumni";
 
 interface NavItem {
   id: SidebarSection | "home";
@@ -483,6 +483,38 @@ function getSidebarContent(
         },
       ],
     },
+
+    alumni: {
+      title: "College Network",
+      sections: [
+        {
+          title: "Explore",
+          items: [
+            {
+              icon: <UserMultiple size={15} className="text-blue-400" />,
+              label: "Where alumni ended up",
+              isActive: true,
+            },
+          ],
+        },
+        {
+          title: "How It Works",
+          items: [
+            {
+              icon: <Report size={15} className="text-zinc-400" />,
+              label: "Powered by workforce data",
+              hasDropdown: true,
+              children: [
+                { label: "Search any college or university" },
+                { label: "See real alumni career paths" },
+                { label: "Filter by company or role" },
+                { label: "~100M verified profiles" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   };
 
   return contentMap[section];
@@ -744,6 +776,7 @@ function IconNavRail({
     { id: "behavioral", icon: <UserIcon size={20} />, label: "Behavioral Practice", href: "/interview" },
     { id: "technical", icon: <Code size={20} />, label: "Technical Practice", href: "/interview-technical" },
     { id: "progress", icon: <ChartBar size={20} />, label: "My Progress", href: "/prepare" },
+    { id: "alumni", icon: <UserMultiple size={20} />, label: "College Network", href: "/prepare" },
     {
       id: "timeline",
       accent: "violet",

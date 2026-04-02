@@ -409,6 +409,139 @@ function MatchInfoCard({ reasons, score }: { reasons: string[]; score: number })
   );
 }
 
+// ── Alumni Section ────────────────────────────────────────────────────────────
+interface AlumnusPerson {
+  id: string;
+  display_name: string;
+  current_title: string;
+  current_company: string;
+  current_location: string;
+  job_history_summary: string;
+  linkedin_url: string | null;
+}
+
+function AlumniSection() {
+  const [school, setSchool] = useState("");
+  const [query, setQuery]   = useState("");
+  const [alumni, setAlumni] = useState<AlumnusPerson[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  async function search(schoolName: string) {
+    if (!schoolName.trim()) return;
+    setLoading(true); setError(null); setAlumni([]);
+    try {
+      const res  = await fetch(`/api/alumni?school=${encodeURIComponent(schoolName)}&limit=12`);
+      const data = await res.json();
+      if (!res.ok) { setError(data?.error ?? "Failed to load alumni."); return; }
+      setAlumni(data.alumni ?? []);
+      if ((data.alumni ?? []).length === 0) setError("No alumni found for that school.");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setQuery(school);
+    search(school);
+  }
+
+  return (
+    <section className="space-y-5">
+      {/* Header */}
+      <div className="relative rounded-2xl overflow-hidden backdrop-blur-2xl border p-5 transition-all duration-300"
+        style={{ background: "var(--pg-glass)", borderColor: "var(--pg-glass-border)", boxShadow: "var(--pg-glass-shadow)" }}>
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-1.5 h-5 rounded-full bg-blue-400 shrink-0 shadow-[0_0_10px_rgba(96,165,250,0.6)]" />
+          <h2 className="text-base font-bold text-white tracking-tight">College Network</h2>
+        </div>
+        <p className="text-sm text-white/55 mb-4 ml-3.5">
+          See where alumni from your school ended up — powered by ~100M verified profiles
+        </p>
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            type="text"
+            value={school}
+            onChange={(e) => setSchool(e.target.value)}
+            placeholder="e.g. MIT, Stanford, University of Michigan"
+            className="flex-1 rounded-lg px-3 py-2 text-sm text-white border border-zinc-600 bg-zinc-800/80 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={loading || !school.trim()}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
+          >
+            {loading ? "Searching…" : "Search"}
+          </button>
+        </form>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.08] px-4 py-3 text-sm text-amber-300">
+          {error}
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 space-y-2 animate-pulse">
+              <div className="h-3 w-1/2 bg-white/10 rounded" />
+              <div className="h-3 w-3/4 bg-white/10 rounded" />
+              <div className="h-2 w-full bg-white/[0.06] rounded mt-3" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Results */}
+      {!loading && alumni.length > 0 && (
+        <>
+          <p className="text-xs text-zinc-500">{alumni.length} alumni found for <span className="text-zinc-300">{query}</span></p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {alumni.map((person) => (
+              <div key={person.id}
+                className="relative rounded-xl overflow-hidden backdrop-blur-xl border border-white/[0.10] bg-white/[0.05] p-4 space-y-2 hover:border-blue-400/30 hover:bg-white/[0.07] transition-all duration-200">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent" />
+                {/* Current role */}
+                <div>
+                  <p className="text-sm font-semibold text-white leading-tight">{person.current_title}</p>
+                  <p className="text-xs text-blue-300/80 mt-0.5">{person.current_company}</p>
+                  {person.current_location && (
+                    <p className="text-[11px] text-zinc-500 mt-0.5">{person.current_location}</p>
+                  )}
+                </div>
+                {/* Career path */}
+                {person.job_history_summary && (
+                  <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-white/[0.07] pt-2">
+                    {person.job_history_summary}
+                  </p>
+                )}
+                {/* LinkedIn */}
+                {person.linkedin_url && (
+                  <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-blue-400 transition-colors duration-150">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    </svg>
+                    View profile
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 // ── Liquid glass helpers ──────────────────────────────────────────────────────
 const glassPanel = "relative rounded-2xl overflow-hidden backdrop-blur-2xl border transition-all duration-300";
 const glassCard   = "frosted-glass-card relative rounded-xl overflow-hidden backdrop-blur-xl border transition-all duration-300";
@@ -625,6 +758,9 @@ function PrepareContent() {
         <main className="flex-1 overflow-y-auto">
           <div className="px-6 py-6 space-y-6">
 
+            {/* Alumni section */}
+            {activeSection === "alumni" && <AlumniSection />}
+
             {/* Interview search — replaces content when behavioral/technical section is active */}
             {(activeSection === "behavioral" || activeSection === "technical") && (
               <InterviewSearch
@@ -654,7 +790,7 @@ function PrepareContent() {
             )}
 
             {/* Error */}
-            {error && activeSection !== "behavioral" && activeSection !== "technical" && (
+            {error && activeSection !== "behavioral" && activeSection !== "technical" && activeSection !== "alumni" && (
               <div className="relative rounded-xl overflow-hidden backdrop-blur-xl bg-amber-400/[0.08] border border-amber-400/20 p-4 text-sm text-amber-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
                 {error}
@@ -662,7 +798,7 @@ function PrepareContent() {
             )}
 
             {/* Loading */}
-            {loading && activeSection !== "behavioral" && activeSection !== "technical" && (
+            {loading && activeSection !== "behavioral" && activeSection !== "technical" && activeSection !== "alumni" && (
               <div className="relative rounded-xl overflow-hidden backdrop-blur-xl bg-white/[0.04] border border-white/[0.10] p-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
                 <div className="inline-flex items-center gap-2 text-sm text-emerald-300">
@@ -673,7 +809,7 @@ function PrepareContent() {
             )}
 
             {/* Results panel */}
-            {showResultsPanel && activeSection !== "behavioral" && activeSection !== "technical" && (
+            {showResultsPanel && activeSection !== "behavioral" && activeSection !== "technical" && activeSection !== "alumni" && (
               <section className="space-y-4">
 
                 {/* ── RECOMMENDED ────────────────────────────────────────────── */}
