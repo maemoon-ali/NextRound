@@ -89,6 +89,7 @@ export const US_UNIVERSITIES: UniversityRecord[] = [
   { name: "University of California Irvine", domain: "uci.edu" },
   { name: "University of California Santa Cruz", domain: "ucsc.edu" },
   { name: "University of California Riverside", domain: "ucr.edu" },
+  { name: "University of California Merced", domain: "ucmerced.edu" },
   { name: "University of Michigan", domain: "umich.edu" },
   { name: "University of Virginia", domain: "virginia.edu" },
   { name: "University of North Carolina at Chapel Hill", domain: "unc.edu" },

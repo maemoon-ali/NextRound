@@ -7,27 +7,25 @@ function SchoolLogo({ domain, name }: { domain: string; name: string }) {
   const [failed, setFailed] = useState(false);
   const initial = name.trim()[0]?.toUpperCase() ?? "U";
 
+  const box: React.CSSProperties = {
+    width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+    display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+  };
+
   if (failed || !domain) {
     return (
-      <div style={{
-        width: 22, height: 22, borderRadius: 5, flexShrink: 0,
-        background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.25)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 10, fontWeight: 800, color: "rgba(96,165,250,0.8)",
-      }}>
-        {initial}
+      <div style={{ ...box, background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.25)" }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(96,165,250,0.8)" }}>{initial}</span>
       </div>
     );
   }
 
+  // Use Google's favicon service keyed on the university's real domain —
+  // every .edu has its own unique favicon, unlike generic logo APIs.
   return (
-    <div style={{
-      width: 22, height: 22, borderRadius: 5, flexShrink: 0,
-      background: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.15)",
-      display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
-    }}>
+    <div style={{ ...box, background: "rgba(255,255,255,0.92)", border: "1px solid rgba(255,255,255,0.15)" }}>
       <img
-        src={`/api/logo?company=${encodeURIComponent(name)}`}
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
         alt=""
         aria-hidden
         onError={() => setFailed(true)}
