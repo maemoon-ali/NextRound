@@ -695,21 +695,28 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
         {linkedinError && <p className="text-amber-400 text-sm" role="alert">{linkedinError}</p>}
       </div>
 
-      {/* ── "Enter manually" reveal button — shown until manual entry is open ─── */}
-      {!showManual && (
+      {/* ── Section header — clickable to open when collapsed, plain when open ── */}
+      {!showManual ? (
         <button
           type="button"
           onClick={() => setShowManual(true)}
-          className="group flex items-center gap-2.5 text-sm text-zinc-400 hover:text-emerald-300 transition-colors duration-200"
+          className="group flex items-center gap-2 w-fit"
         >
-          <span className="flex items-center justify-center w-7 h-7 rounded-lg border border-zinc-700 bg-zinc-800/60 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/10 transition-all duration-200">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
+          <span className="w-1.5 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)] group-hover:shadow-[0_0_12px_rgba(52,211,153,0.7)] transition-shadow duration-200" />
+          <span className="text-sm font-semibold text-zinc-200 group-hover:text-emerald-300 transition-colors duration-200">
+            Enter Job History Manually
           </span>
-          Enter job history manually
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+            strokeLinecap="round" strokeLinejoin="round"
+            className="text-zinc-600 group-hover:text-emerald-400 transition-colors duration-200 ml-0.5">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
         </button>
+      ) : (
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+          <span className="text-sm font-semibold text-zinc-200">Job History</span>
+        </div>
       )}
 
       {/* ── JOB HISTORY — animates open with grid-template-rows ──────────────── */}
@@ -720,11 +727,6 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
       }}>
       <div style={{ overflow: "hidden" }}>
       <div className="space-y-3 pt-1">
-          {/* Section header */}
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-            <span className="text-sm font-semibold text-zinc-200">Job History</span>
-          </div>
 
           {validationError && <p className="text-amber-400 text-sm" role="alert">{validationError}</p>}
 
