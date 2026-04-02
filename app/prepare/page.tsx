@@ -626,13 +626,8 @@ function AlumniSection() {
         const fnColors = ["#60a5fa","#a78bfa","#34d399","#f59e0b","#f472b6","#fb923c","#06b6d4"];
         const personColors = ["#60a5fa","#a78bfa","#34d399","#f59e0b","#f472b6","#fb923c","#06b6d4","#e879f9","#4ade80"];
 
-        // Scale sample counts → estimated real counts using the true total from the API
         const sample = trends.sample ?? 300;
-        const scaleFactor = trends.total / sample;
-        const estimatedCount = (sampleCount: number) =>
-          Math.round(sampleCount * scaleFactor).toLocaleString();
-
-        const top1 = trends.top_companies[0];
+        const top1   = trends.top_companies[0];
         const maxBar = top1?.count ?? 1; // for relative bar widths
         return (
           <>
@@ -704,7 +699,7 @@ function AlumniSection() {
                           <div className="flex items-center justify-between gap-2">
                             <p className={`truncate font-semibold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-300"}`}>{co.name}</p>
                             <span className={`tabular-nums shrink-0 font-bold ${isTop3 ? "text-sm text-white" : "text-xs text-zinc-400"}`}>
-                              ~{estimatedCount(co.count)}
+                              {co.count.toLocaleString()}
                             </span>
                           </div>
                           {isTop3 && (
@@ -719,7 +714,7 @@ function AlumniSection() {
                   })}
                 </div>
                 <div className="px-5 py-2.5 border-t border-white/[0.05]">
-                  <p className="text-[10px] text-zinc-700">~ Estimated from {sample.toLocaleString()} sampled profiles</p>
+                  <p className="text-[10px] text-zinc-700">Counts from full dataset · trends from {sample.toLocaleString()} sampled profiles</p>
                 </div>
               </div>
 
