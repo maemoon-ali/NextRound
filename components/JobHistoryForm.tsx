@@ -653,7 +653,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+    <form onSubmit={handleSubmit} className="mt-4 space-y-3">
 
       {/* ── IMPORT TOOLS (always at top) ─────────────────────────────────────── */}
       <div className="space-y-3">
