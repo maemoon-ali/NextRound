@@ -653,23 +653,28 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+    <form onSubmit={handleSubmit} className="mt-4 space-y-[18px]">
 
-      {/* ── IMPORT TOOLS (always at top) ─────────────────────────────────────── */}
-      <div className="space-y-3">
-        {/* Resume upload */}
-        <div className="flex flex-wrap items-center gap-3">
-          <input ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
-            onChange={handleResumeUpload} className="hidden" aria-hidden />
-          <LiquidButton type="button" onClick={() => fileInputRef.current?.click()}
-            disabled={uploadStatus === "uploading"} size="sm" className="text-emerald-200">
-            {uploadStatus === "uploading" ? "Parsing…" : "Upload Resume"}
-          </LiquidButton>
-          {uploadStatus === "done" && <span className="text-sm text-emerald-400">Job history filled from resume.</span>}
-          {uploadError && <p className="text-amber-400 text-sm" role="alert">{uploadError}</p>}
-        </div>
+      {/* ── Subtitle ─────────────────────────────────────────────────────────── */}
+      <p className="text-sm text-white/60 -mt-1">
+        Enter your roles to find jobs matching your career pathway
+      </p>
 
-        {/* LinkedIn URL */}
+      {/* ── Resume upload ────────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <input ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
+          onChange={handleResumeUpload} className="hidden" aria-hidden />
+        <LiquidButton type="button" onClick={() => fileInputRef.current?.click()}
+          disabled={uploadStatus === "uploading"} size="sm" className="text-emerald-200">
+          {uploadStatus === "uploading" ? "Parsing…" : "Upload Resume"}
+        </LiquidButton>
+        {uploadStatus === "done" && <span className="text-sm text-emerald-400">Job history filled from resume.</span>}
+        {uploadError && <p className="text-amber-400 text-sm" role="alert">{uploadError}</p>}
+      </div>
+
+      {/* ── LinkedIn URL ─────────────────────────────────────────────────────── */}
+      <div className="space-y-1.5">
+        <p className="text-xs text-zinc-500">Paste your LinkedIn profile URL to auto-fill your experience.</p>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px]">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
@@ -692,7 +697,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
           </LiquidButton>
           {linkedinStatus === "done" && <span className="text-sm text-emerald-400">Imported from LinkedIn.</span>}
         </div>
-        {linkedinError && <p className="text-amber-400 text-sm" role="alert">{linkedinError}</p>}
+        {linkedinError && <p className="text-amber-400 text-xs" role="alert">{linkedinError}</p>}
       </div>
 
       {/* ── Section header — clickable to open when collapsed, plain when open ── */}
@@ -700,11 +705,11 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
         <button
           type="button"
           onClick={() => setShowManual(true)}
-          className="group flex items-center gap-2 w-fit"
+          className="group flex items-center gap-2 w-fit mt-3"
         >
           <span className="w-1.5 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)] group-hover:shadow-[0_0_12px_rgba(52,211,153,0.7)] transition-shadow duration-200" />
           <span className="text-sm font-semibold text-zinc-200 group-hover:text-emerald-300 transition-colors duration-200">
-            Enter Job History Manually
+            Enter Job History & Education Manually
           </span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
             strokeLinecap="round" strokeLinejoin="round"
@@ -726,7 +731,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
         transition: "grid-template-rows 0.42s cubic-bezier(0.16,1,0.3,1)",
       }}>
       <div style={{ overflow: "hidden" }}>
-      <div className="space-y-3 pt-1">
+      <div className="space-y-[18px] pt-1">
 
           {validationError && <p className="text-amber-400 text-sm" role="alert">{validationError}</p>}
 

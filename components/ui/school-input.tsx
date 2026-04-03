@@ -128,19 +128,19 @@ export function SchoolInput({
             zIndex: 9999,
             borderRadius: 14,
             overflow: "hidden",
-            background: "rgba(15,15,20,0.97)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            background: "var(--dropdown-bg)",
+            border: "1px solid var(--dropdown-border)",
             backdropFilter: "blur(24px)",
             WebkitBackdropFilter: "blur(24px)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4)",
+            boxShadow: "var(--dropdown-shadow)",
           }}
         >
           {/* Header */}
           <div style={{
             padding: "8px 14px 6px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--dropdown-divider)",
             fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: "rgba(255,255,255,0.25)",
+            textTransform: "uppercase", color: "var(--dropdown-header-text)",
           }}>
             Schools
           </div>
@@ -165,16 +165,16 @@ export function SchoolInput({
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
-                  background: isActive ? "rgba(96,165,250,0.10)" : "transparent",
+                  background: isActive ? "var(--dropdown-item-hover)" : "transparent",
                   border: "none",
                   cursor: "pointer",
                   transition: "background 0.1s",
-                  borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  borderBottom: i < suggestions.length - 1 ? "1px solid var(--dropdown-divider)" : "none",
                 }}
               >
                 <SchoolLogo domain={domain ?? ""} name={school} />
 
-                <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.88)" }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "var(--dropdown-text)" }}>
                   {idx >= 0 ? (
                     <>
                       {school.slice(0, idx)}

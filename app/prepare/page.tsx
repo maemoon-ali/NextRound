@@ -525,18 +525,17 @@ function AlumniSection() {
         {(formExpanded || !searchedSchool) && (
           <div className="p-6">
             {/* Title + badge */}
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">College Network</h2>
-                <p className="text-sm text-white/45 mt-1 leading-snug">
-                  See where alumni from your school work and what companies recruit them most.
-                </p>
-              </div>
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-2xl font-bold text-white tracking-tight leading-tight">College Network</h2>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 tracking-wider uppercase shrink-0 ml-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Live Data
               </span>
             </div>
+
+            <p className="text-sm text-white/70 mb-5 leading-snug">
+              See where alumni from your school work and what companies recruit them most.
+            </p>
 
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
@@ -1047,8 +1046,8 @@ function AlumniSection() {
 
                           {modalDropdownOpen && (
                             <div
-                              className="absolute top-full mt-1.5 left-0 rounded-xl border border-white/[0.12] overflow-hidden"
-                              style={{ background: "rgba(12,12,18,0.98)", backdropFilter: "blur(20px)", zIndex: 10, minWidth: 220, boxShadow: "0 20px 50px rgba(0,0,0,0.6)" }}
+                              className="absolute top-full mt-1.5 left-0 rounded-xl overflow-hidden"
+                              style={{ background: "var(--dropdown-bg)", border: "1px solid var(--dropdown-border)", backdropFilter: "blur(20px)", zIndex: 10, minWidth: 220, boxShadow: "var(--dropdown-shadow)" }}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="p-1">
@@ -1056,11 +1055,11 @@ function AlumniSection() {
                                   type="button"
                                   onClick={() => { setModalFilterFn("all"); setModalDropdownOpen(false); }}
                                   className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
-                                  style={{ background: modalFilterFn === "all" ? "rgba(255,255,255,0.08)" : "transparent", color: "rgba(255,255,255,0.8)" }}
+                                  style={{ background: modalFilterFn === "all" ? "var(--dropdown-item-active)" : "transparent", color: "var(--dropdown-text-muted)" }}
                                 >
-                                  <span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
+                                  <span className="w-2 h-2 rounded-full bg-zinc-400 shrink-0" />
                                   All functions
-                                  <span className="ml-auto text-xs text-zinc-600">{alumni.length}</span>
+                                  <span className="ml-auto text-xs" style={{ color: "var(--dropdown-count-text)" }}>{alumni.length}</span>
                                 </button>
                                 {uniqueFns.map(fn => {
                                   const c = fnColorMap[fn] ?? "#94a3b8";
@@ -1071,11 +1070,11 @@ function AlumniSection() {
                                       type="button"
                                       onClick={() => { setModalFilterFn(fn); setModalDropdownOpen(false); }}
                                       className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
-                                      style={{ background: modalFilterFn === fn ? `${c}18` : "transparent", color: modalFilterFn === fn ? c : "rgba(255,255,255,0.7)" }}
+                                      style={{ background: modalFilterFn === fn ? `${c}18` : "transparent", color: modalFilterFn === fn ? c : "var(--dropdown-text-muted)" }}
                                     >
                                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />
                                       {fn}
-                                      <span className="ml-auto text-xs text-zinc-600">{count}</span>
+                                      <span className="ml-auto text-xs" style={{ color: "var(--dropdown-count-text)" }}>{count}</span>
                                     </button>
                                   );
                                 })}
@@ -1397,13 +1396,10 @@ function PrepareContent() {
               <section className={glassPanel + " p-5"} style={glassPanelStyle}>
                 {/* Specular highlight */}
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-4">
                   <span className="w-1.5 h-5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.6)]" />
                   <h2 className="text-base font-bold text-white tracking-tight">Your Job History</h2>
                 </div>
-                <p className="text-sm text-white/55 mb-4 ml-3.5">
-                  Enter your roles to find jobs matching your career pathway
-                </p>
                 <JobHistoryForm onSubmit={handleSubmit} loading={loading} variant="vibrant" />
               </section>
             )}
