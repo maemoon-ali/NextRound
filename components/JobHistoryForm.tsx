@@ -730,7 +730,7 @@ export function JobHistoryForm({ onSubmit, loading, variant = "default" }: JobHi
         gridTemplateRows: showManual ? "1fr" : "0fr",
         transition: "grid-template-rows 0.42s cubic-bezier(0.16,1,0.3,1)",
       }}>
-      <div style={{ overflow: "hidden" }}>
+      <div style={{ overflow: "hidden", padding: "0 4px" }}>
       <div className="space-y-[18px] pt-1">
 
           {validationError && <p className="text-amber-400 text-sm" role="alert">{validationError}</p>}
