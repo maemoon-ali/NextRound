@@ -771,7 +771,7 @@ function IconNavRail({
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isDark, toggle } = useThemeToggle();
 
-  const navItems: (NavItem & { accent?: "emerald" | "violet" })[] = [
+  const navItems: NavItem[] = [
     { id: "matches", icon: <SearchIcon size={20} />, label: "Find Roles", href: "/prepare" },
     { id: "saved", icon: <BookmarkFilled size={20} />, label: "Saved Roles", href: "/prepare" },
     { id: "behavioral", icon: <UserIcon size={20} />, label: "Behavioral Practice", href: "/interview" },
