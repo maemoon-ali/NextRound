@@ -1707,7 +1707,7 @@ function PrepareContent() {
                 )}
 
                 {/* ── CAREER TIMELINE ───────────────────────────────────────── */}
-                {tab === "timeline" && (
+                {tab === "timeline" && activeSection !== "settings" && (
                   <>
                   {/* ── Phase: idle or loading — centered hero ───────────── */}
                   {!tlSteps && (
@@ -1906,9 +1906,13 @@ function PrepareContent() {
                 )}
 
                 {/* ── SETTINGS ──────────────────────────────────────────────── */}
-                {activeSection === "settings" && tab !== "saved" && tab !== "attempted" && (
-                  <div className="rounded-xl border p-8 text-center" style={{ borderColor: "var(--pg-glass-border)", background: "var(--pg-glass)" }}>
-                    <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>Settings coming soon.</p>
+                {activeSection === "settings" && (
+                  <div className="flex flex-col items-center justify-center" style={{ minHeight: "70vh" }}>
+                    <div className="rounded-xl border p-12 text-center" style={{ borderColor: "var(--pg-glass-border)", background: "var(--pg-glass)", maxWidth: 480, width: "100%" }}>
+                      <div className="mb-3 text-2xl">⚙️</div>
+                      <h2 className="text-base font-semibold mb-2" style={{ color: "var(--pg-text)" }}>Settings</h2>
+                      <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>Settings coming soon.</p>
+                    </div>
                   </div>
                 )}
 
