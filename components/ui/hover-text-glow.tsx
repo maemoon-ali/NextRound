@@ -26,7 +26,7 @@ export const HoverTextGlow = ({
   }, [coords]);
 
   return (
-    <div className={`relative flex w-full items-center justify-center overflow-hidden select-none ${className}`}>
+    <div className={`relative flex w-full items-center justify-center overflow-hidden select-none ${className}`} style={{ color: "var(--pg-text)" }}>
       <svg
         ref={svgRef}
         width="100%"
@@ -42,13 +42,13 @@ export const HoverTextGlow = ({
           <linearGradient id="tlTextGradient" gradientUnits="userSpaceOnUse">
             {hover ? (
               <>
-                <stop offset="0%"   stopColor="hsl(252, 80%, 82%)" />
-                <stop offset="33%"  stopColor="hsl(280, 78%, 84%)" />
-                <stop offset="66%"  stopColor="hsl(310, 74%, 84%)" />
-                <stop offset="100%" stopColor="hsl(340, 80%, 84%)" />
+                <stop offset="0%"   stopColor="hsl(252, 80%, 62%)" />
+                <stop offset="33%"  stopColor="hsl(280, 78%, 64%)" />
+                <stop offset="66%"  stopColor="hsl(310, 74%, 64%)" />
+                <stop offset="100%" stopColor="hsl(340, 80%, 64%)" />
               </>
             ) : (
-              <stop offset="0%" stopColor="white" />
+              <stop offset="0%" stopColor="currentColor" />
             )}
           </linearGradient>
 
@@ -77,7 +77,7 @@ export const HoverTextGlow = ({
           dominantBaseline="middle"
           strokeWidth="1.2"
           className="fill-transparent font-bold"
-          style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "4rem", fontWeight: 800, stroke: "rgba(255,255,255,0.55)" }}
+          style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: "4rem", fontWeight: 800, stroke: "currentColor", opacity: 0.55 }}
           initial={{ strokeDashoffset: 1000, strokeDasharray: 1000 }}
           animate={{ strokeDashoffset: 0,    strokeDasharray: 1000 }}
           transition={{ duration: 3, ease: "easeInOut" }}

@@ -1906,7 +1906,7 @@ function PrepareContent() {
                 )}
 
                 {/* ── SETTINGS ──────────────────────────────────────────────── */}
-                {activeSection === "settings" && tab !== "saved" && tab !== "attempted" && tab !== "timeline" && (
+                {activeSection === "settings" && tab !== "saved" && tab !== "attempted" && (
                   <div className="rounded-xl border p-8 text-center" style={{ borderColor: "var(--pg-glass-border)", background: "var(--pg-glass)" }}>
                     <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>Settings coming soon.</p>
                   </div>
