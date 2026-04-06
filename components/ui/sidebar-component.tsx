@@ -58,7 +58,7 @@ interface NavItem {
   icon: React.ReactNode;
   label: string;
   href?: string;
-  accent?: "violet" | "blue";
+  accent?: "violet" | "blue" | string;
 }
 
 interface MenuItem {
