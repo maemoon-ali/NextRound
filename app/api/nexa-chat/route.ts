@@ -235,8 +235,7 @@ CONTENT RULES:
 - Use the LiveData workforce data provided below to ground your answers in real facts. Reference numbers, companies, and patterns from the data naturally.
 - When the user profile is available, personalise your answer — reference their target role, saved companies, or background directly.
 - When page context is available, treat it as the source of truth for what the user is currently viewing. Reference specific data, roles, companies, or numbers from the page naturally.
-- LENGTH: default to 2–4 sentences for simple questions. Use lists or multiple paragraphs only for genuinely complex requests (full interview prep, step-by-step career paths). When in doubt, be shorter.
-- End with one short follow-up question, no longer than one sentence.
+- End with one short follow-up question when it adds value.
 
 ${userBlock ? `${userBlock}\n` : ""}${pageBlock}${liveDataContext
   ? `\n\nREAL WORKFORCE DATA FOR THIS QUERY (use this — it is live data, not made up):\n${liveDataContext}`
@@ -264,20 +263,16 @@ async function streamOllama(
           ...history.map(m => ({ role: m.role, content: m.text })),
           { role: "user", content: userMessage },
         ],
-        options: { temperature: 0.65, num_predict: 280 },
+        options: { temperature: 0.65, num_predict: 1200 },
       }),
       signal: ctrl.signal,
     });
     if (!ollamaRes.ok || !ollamaRes.body) return null;
 
-    const SHORT_INTENTS: Intent[] = ["company_info", "people_at_company", "salary", "general"];
-    const maxSentences = SHORT_INTENTS.includes(intent) ? 3 : 99;
-
     const encoder = new TextEncoder();
     const reader  = ollamaRes.body.getReader();
     const decoder = new TextDecoder();
     let   buf     = "";
-    let   sentenceCount = 0;
     let   done    = false;
 
     const stream = new ReadableStream({
@@ -300,16 +295,7 @@ async function streamOllama(
               const json = JSON.parse(line);
               const token: string = json.message?.content ?? "";
               if (token) {
-                // Count sentence endings to enforce short-intent cap
-                const endings = (token.match(/[.!?]/g) ?? []).length;
-                sentenceCount += endings;
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(token)}\n\n`));
-                if (sentenceCount >= maxSentences) {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                  controller.close();
-                  done = true;
-                  return;
-                }
               }
               if (json.done) {
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));

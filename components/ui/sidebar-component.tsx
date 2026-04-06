@@ -58,6 +58,7 @@ interface NavItem {
   icon: React.ReactNode;
   label: string;
   href?: string;
+  accent?: "violet" | "blue";
 }
 
 interface MenuItem {
@@ -776,7 +777,7 @@ function IconNavRail({
     { id: "behavioral", icon: <UserIcon size={20} />, label: "Behavioral Practice", href: "/interview" },
     { id: "technical", icon: <Code size={20} />, label: "Technical Practice", href: "/interview-technical" },
     { id: "progress", icon: <ChartBar size={20} />, label: "My Progress", href: "/prepare" },
-    { id: "alumni", icon: <UserMultiple size={20} />, label: "College Network", href: "/prepare" },
+    { id: "alumni", icon: <UserMultiple size={20} />, label: "College Network", href: "/prepare", accent: "blue" },
     {
       id: "timeline",
       accent: "violet",
@@ -813,7 +814,7 @@ function IconNavRail({
   return (
     // Outer aside: FIXED 56px — never changes, zero layout reflow
     <aside
-      className="relative flex-shrink-0 h-full z-20"
+      className="relative flex-shrink-0 h-full z-[30]"
       style={{ width: `${ICON_W}px` }}
       onMouseEnter={() => {
         if (window.__nexaOverPill) return;
@@ -851,8 +852,9 @@ function IconNavRail({
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
             const isViolet = item.accent === "violet";
-            const activeTextClass = isActive ? (isViolet ? "text-violet-400" : "text-emerald-400") : "hover:bg-white/10 text-white/80 hover:text-white";
-            const activeBgClass = isActive ? (isViolet ? "bg-violet-500/20" : "bg-emerald-500/20") : "";
+            const isBlue   = item.accent === "blue";
+            const activeTextClass = isActive ? (isViolet ? "text-violet-400" : isBlue ? "text-blue-400" : "text-emerald-400") : "hover:bg-white/10 text-white/80 hover:text-white";
+            const activeBgClass = isActive ? (isViolet ? "bg-violet-500/20" : isBlue ? "bg-blue-500/20" : "bg-emerald-500/20") : "";
             return (
               <button
                 key={item.id}

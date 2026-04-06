@@ -124,6 +124,27 @@ function GlassCard({
 }: {
   step: TimelineStep; side: "left" | "right"; zoom: number; onClick: () => void;
 }) {
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark") || !document.documentElement.classList.contains("light"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  // Adaptive text colors for dark/light mode
+  const muted1 = isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.55)";
+  const muted2 = isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.45)";
+  const muted3 = isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.38)";
+  const muted4 = isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.48)";
+  const muted5 = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.60)";
+  const muted6 = isDark ? "rgba(255,255,255,0.40)" : "rgba(0,0,0,0.65)";
+  const muted7 = isDark ? "rgba(255,255,255,0.58)" : "rgba(0,0,0,0.75)";
+  const muted8 = isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.70)";
+  const muted9 = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.65)";
+  const titleColor = isDark ? "#fff" : "#111";
+
   const c        = TYPE[step.companyType];
   const isPred   = !!step.isPrediction;
   const isTgt    = !!step.isTarget;
@@ -153,14 +174,14 @@ function GlassCard({
       style={{
         width: w,
         background: isNoData
-          ? "rgba(255,255,255,0.03)"
+          ? (isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)")
           : isTgt
           ? "rgba(52,211,153,0.09)"
           : step.isCurrent
           ? "rgba(251,191,36,0.10)"
           : isPred
           ? "rgba(139,92,246,0.10)"
-          : c.glow.replace("0.55", "0.08"),
+          : (isDark ? c.glow.replace("0.55", "0.08") : c.glow.replace("0.55", "0.06")),
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
         border: `${step.isCurrent ? "1.5px" : "1px"} ${isPred && !isTgt ? "dashed" : "solid"} ${isNoData ? "rgba(255,255,255,0.10)" : accent + (step.isCurrent ? "60" : "45")}`,
@@ -203,17 +224,17 @@ function GlassCard({
 
       {isNoData ? (
         <div style={{ padding: "4px 0" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.28)", marginBottom: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: muted1, marginBottom: 4 }}>
             No stepping-stone found
           </div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#818cf8", marginBottom: 6 }}>
             You are ready to apply!
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, color: muted2, lineHeight: 1.5 }}>
             {step.company}
           </div>
           {step.predictionBasis && (
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.14)", marginTop: 6, fontStyle: "italic" }}>
+            <div style={{ fontSize: 10, color: muted3, marginTop: 6, fontStyle: "italic" }}>
               {step.predictionBasis}
             </div>
           )}
@@ -226,7 +247,7 @@ function GlassCard({
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 5 }}>
                 {step.isCurrent && (
-                  <Badge label="Current" color="rgba(255,255,255,0.50)" bg="rgba(255,255,255,0.10)" border="rgba(255,255,255,0.22)" />
+                  <Badge label="Current" color={muted9} bg={isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"} border={muted4} />
                 )}
                 {isPred && !isTgt && (
                   <Badge label="Recommended" color="rgba(167,139,250,0.85)" bg="rgba(167,139,250,0.12)" border="rgba(167,139,250,0.35)" dashed />
@@ -238,7 +259,7 @@ function GlassCard({
 
               <div style={{
                 fontSize: isTgt ? 18 : 14.5, fontWeight: 800,
-                color: isTgt ? "#34d399" : step.isCurrent ? "#fef3c7" : isPred ? "rgba(167,139,250,0.90)" : "#fff",
+                color: isTgt ? "#34d399" : step.isCurrent ? "#fbbf24" : isPred ? "rgba(167,139,250,0.90)" : titleColor,
                 letterSpacing: "-0.02em", lineHeight: 1.2,
               }}>
                 {step.title}
@@ -246,13 +267,13 @@ function GlassCard({
 
               {/* Duration only — no repeated year here */}
               {step.duration && (
-                <div style={{ fontSize: 10.5, fontWeight: 500, color: isPred ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 500, color: isPred ? muted4 : muted5, marginTop: 2 }}>
                   {step.duration}
                 </div>
               )}
 
               <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 5, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: isPred ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.58)" }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: isPred ? muted6 : muted7 }}>
                   {step.company}
                 </span>
                 <span style={{
@@ -273,13 +294,13 @@ function GlassCard({
               alignSelf: "stretch",
             }}>
               {isPred && !isTgt && (
-                <div style={{ fontSize: 8, fontWeight: 800, color: "rgba(167,139,250,0.55)", letterSpacing: "0.14em", textTransform: "uppercase" as const, marginBottom: 3 }}>
+                <div style={{ fontSize: 8, fontWeight: 800, color: "rgba(167,139,250,0.70)", letterSpacing: "0.14em", textTransform: "uppercase" as const, marginBottom: 3 }}>
                   est.
                 </div>
               )}
               <div style={{
                 fontSize: 22, fontWeight: 800, lineHeight: 1,
-                color: isTgt ? "#34d399" : step.isCurrent ? "#fbbf24" : isPred ? "rgba(167,139,250,0.65)" : "rgba(255,255,255,0.65)",
+                color: isTgt ? "#34d399" : step.isCurrent ? "#fbbf24" : isPred ? "rgba(167,139,250,0.80)" : muted8,
                 letterSpacing: "-0.03em",
               }}>
                 {step.startYear !== "—" ? step.startYear : "—"}
@@ -290,7 +311,7 @@ function GlassCard({
                 </div>
               )}
               {!isPred && step.endYear && step.endYear !== step.startYear && (
-                <div style={{ fontSize: 10, marginTop: 3, fontWeight: 500, color: isTgt ? "rgba(52,211,153,0.55)" : "rgba(255,255,255,0.22)" }}>
+                <div style={{ fontSize: 10, marginTop: 3, fontWeight: 500, color: isTgt ? "rgba(52,211,153,0.70)" : muted4 }}>
                   {step.endYear === "Present" ? "Now" : step.endYear}
                 </div>
               )}

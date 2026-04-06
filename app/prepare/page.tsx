@@ -1735,7 +1735,7 @@ function PrepareContent() {
                           </div>
                           <p style={{
                             marginTop: 28, marginBottom: 32, fontSize: 15, fontWeight: 300,
-                            color: "rgba(255,255,255,0.38)", lineHeight: 1.5,
+                            color: "var(--pg-text-muted)", lineHeight: 1.5,
                             fontFamily: "var(--font-sora), sans-serif",
                             letterSpacing: "0.06em",
                           }}>
@@ -1747,10 +1747,10 @@ function PrepareContent() {
                         <div style={{
                           display: "flex", alignItems: "center",
                           width: "min(560px, 100%)", height: 60, borderRadius: 9999,
-                          background: "rgba(255,255,255,0.055)",
-                          border: "1px solid rgba(255,255,255,0.13)",
+                          background: "var(--pg-glass)",
+                          border: "1px solid var(--pg-glass-border)",
                           padding: "0 20px", gap: 12,
-                          boxShadow: "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.3)",
+                          boxShadow: "0 0 0 4px rgba(167,139,250,0.05), 0 4px 24px rgba(0,0,0,0.15)",
                         }}>
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                             <rect width="24" height="24" rx="4" fill="#0A66C2"/>
@@ -1766,7 +1766,7 @@ function PrepareContent() {
                             placeholder="linkedin.com/in/your-name"
                             style={{
                               flex: 1, background: "none", border: "none", outline: "none",
-                              fontSize: 15, color: "#ffffff", minWidth: 0,
+                              fontSize: 15, color: "var(--pg-text)", minWidth: 0,
                             }}
                           />
                         </div>
@@ -1775,8 +1775,8 @@ function PrepareContent() {
                         <div style={{
                           display: "flex", alignItems: "stretch",
                           width: "min(560px, 100%)", height: 60, borderRadius: 9999,
-                          background: "rgba(255,255,255,0.055)",
-                          border: "1px solid rgba(255,255,255,0.13)",
+                          background: "var(--pg-glass)",
+                          border: "1px solid var(--pg-glass-border)",
                           overflow: "hidden",
                           boxShadow: "0 0 0 4px rgba(52,211,153,0.04), 0 4px 24px rgba(0,0,0,0.3)",
                         }}>
@@ -1796,13 +1796,13 @@ function PrepareContent() {
                               placeholder="Dream role"
                               style={{
                                 flex: 1, background: "none", border: "none", outline: "none",
-                                fontSize: 15, color: "#ffffff", minWidth: 0,
+                                fontSize: 15, color: "var(--pg-text)", minWidth: 0,
                               }}
                             />
                           </div>
 
                           {/* Divider */}
-                          <div style={{ width: 1, background: "rgba(255,255,255,0.11)", flexShrink: 0, margin: "12px 0" }} />
+                          <div style={{ width: 1, background: "var(--pg-glass-border)", flexShrink: 0, margin: "12px 0" }} />
 
                           {/* Dream company side */}
                           <div style={{
@@ -1820,7 +1820,7 @@ function PrepareContent() {
                               placeholder="Dream company"
                               style={{
                                 flex: 1, background: "none", border: "none", outline: "none",
-                                fontSize: 15, color: "#ffffff", minWidth: 0,
+                                fontSize: 15, color: "var(--pg-text)", minWidth: 0,
                               }}
                             />
                           </div>
@@ -1846,10 +1846,10 @@ function PrepareContent() {
                             transition: "all 0.2s ease",
                             cursor: (tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading) ? "pointer" : "default",
                             background: (tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading)
-                              ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.04)",
-                            border: `1px solid ${(tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading) ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.10)"}`,
+                              ? "rgba(167,139,250,0.18)" : "var(--pg-glass)",
+                            border: `1px solid ${(tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading) ? "rgba(167,139,250,0.45)" : "var(--pg-glass-border)"}`,
                             color: (tlLinkedinUrl.trim() && tlDreamRole.trim() && tlDreamCompany.trim() && !tlLoading)
-                              ? "#a78bfa" : "rgba(255,255,255,0.22)",
+                              ? "#a78bfa" : "var(--pg-text-muted)",
                           }}
                         >
                           {tlLoading ? (
@@ -1907,8 +1907,8 @@ function PrepareContent() {
 
                 {/* ── SETTINGS ──────────────────────────────────────────────── */}
                 {activeSection === "settings" && tab !== "saved" && tab !== "attempted" && tab !== "timeline" && (
-                  <div className="rounded-xl border border-white/[0.06] p-8 text-center">
-                    <p className="text-sm text-white/30">Settings coming soon.</p>
+                  <div className="rounded-xl border p-8 text-center" style={{ borderColor: "var(--pg-glass-border)", background: "var(--pg-glass)" }}>
+                    <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>Settings coming soon.</p>
                   </div>
                 )}
 
