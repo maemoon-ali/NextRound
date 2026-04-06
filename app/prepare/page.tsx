@@ -1909,7 +1909,11 @@ function PrepareContent() {
                 {activeSection === "settings" && (
                   <div className="flex flex-col items-center justify-center" style={{ minHeight: "70vh" }}>
                     <div className="rounded-xl border p-12 text-center" style={{ borderColor: "var(--pg-glass-border)", background: "var(--pg-glass)", maxWidth: 480, width: "100%" }}>
-                      <div className="mb-3 text-2xl">⚙️</div>
+                      <div className="mb-3 flex justify-center" style={{ color: "var(--pg-text-muted)" }}>
+                        <svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M27 16.76v-1.53l1.92-1.68A2 2 0 0 0 29.3 11l-2.36-4a2 2 0 0 0-1.73-1 2 2 0 0 0-.64.1l-2.43.82a11.35 11.35 0 0 0-1.31-.75l-.51-2.52a2 2 0 0 0-2-1.61h-4.64a2 2 0 0 0-2 1.61l-.51 2.52a11.48 11.48 0 0 0-1.32.75l-2.38-.82A2 2 0 0 0 6.79 6a2 2 0 0 0-1.73 1L2.7 11a2 2 0 0 0 .41 2.51L5 15.23v1.54l-1.89 1.68A2 2 0 0 0 2.7 21l2.36 4a2 2 0 0 0 1.73 1 2 2 0 0 0 .64-.1l2.43-.82a11.35 11.35 0 0 0 1.31.75l.51 2.52a2 2 0 0 0 2 1.61h4.64a2 2 0 0 0 2-1.61l.51-2.52a11.48 11.48 0 0 0 1.32-.75l2.42.82a2 2 0 0 0 .64.1 2 2 0 0 0 1.73-1l2.28-4a2 2 0 0 0-.41-2.51ZM25.21 24l-2.43-.82a2 2 0 0 0-1.29.1 9.42 9.42 0 0 1-1.66.95 2 2 0 0 0-1.12 1.42l-.51 2.52h-4.4l-.51-2.52a2 2 0 0 0-1.12-1.42 9.42 9.42 0 0 1-1.66-.95 2 2 0 0 0-1.29-.1l-2.43.82-2.2-3.82 1.89-1.71a2 2 0 0 0 .63-1.43v-2.08a2 2 0 0 0-.63-1.43l-1.89-1.71 2.2-3.82 2.43.82a2 2 0 0 0 1.29-.1 9.42 9.42 0 0 1 1.66-.95 2 2 0 0 0 1.12-1.42l.51-2.52h4.4l.51 2.52a2 2 0 0 0 1.12 1.42 9.42 9.42 0 0 1 1.66.95 2 2 0 0 0 1.29.1l2.43-.82 2.2 3.82-1.89 1.71a2 2 0 0 0-.63 1.43v2.08a2 2 0 0 0 .63 1.43l1.89 1.71ZM16 10a6 6 0 1 0 6 6 6 6 0 0 0-6-6Zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4Z"/>
+                        </svg>
+                      </div>
                       <h2 className="text-base font-semibold mb-2" style={{ color: "var(--pg-text)" }}>Settings</h2>
                       <p className="text-sm" style={{ color: "var(--pg-text-muted)" }}>Settings coming soon.</p>
                     </div>
